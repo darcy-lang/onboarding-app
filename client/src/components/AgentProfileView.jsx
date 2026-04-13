@@ -92,7 +92,7 @@ export default function AgentProfileView({ agentId, onClose }) {
 
         {/* Tab switcher */}
         <div style={{ display: 'flex', borderBottom: '1px solid #1A1820', marginBottom: 16 }}>
-          {[{ id: 'agent', label: 'Agent Tasks' }, { id: 'dc', label: 'My Checklist' }].map(t => (
+          {[{ id: 'agent', label: 'Agent Tasks' }, { id: 'dc', label: 'My Checklist' }, { id: 'checkins', label: 'Check-ins' }].map(t => (
             <button key={t.id} onClick={() => setProfileTab(t.id)} style={{ background: 'transparent', border: 'none', borderBottom: `2px solid ${profileTab === t.id ? ac : 'transparent'}`, color: profileTab === t.id ? ac : '#3A3040', padding: '7px 14px', cursor: 'pointer', fontSize: 12, transition: 'all 0.15s', marginBottom: -1 }}>{t.label}</button>
           ))}
         </div>
@@ -165,34 +165,56 @@ export default function AgentProfileView({ agentId, onClose }) {
         </div>
         )}
 
-        {/* Recent check-ins */}
-        {checkins.length > 0 && (
+        {/* Check-ins tab */}
+        {profileTab === 'checkins' && (
           <div>
-            <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#3A3040', textTransform: 'uppercase', marginBottom: 10 }}>Recent Check-ins</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {checkins.map((c, i) => (
-                <div key={i} style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 12, padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ fontSize: 12, color: '#6A6070', fontWeight: 600 }}>{c.date}</div>
-                    {c.evening_done !== null && (
-                      <div style={{ fontSize: 11, color: c.evening_done ? '#6BAE94' : '#E07B6A', fontWeight: 700 }}>
-                        {c.evening_done ? '✓ Completed' : '✗ Missed'}
-                      </div>
-                    )}
-                  </div>
-                  {c.morning_answer && (
-                    <div style={{ fontSize: 12, color: '#B8B0A8', lineHeight: 1.5 }}>
-                      <span style={{ color: '#D4A853' }}>Morning:</span> {c.morning_answer}
+            {checkins.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: '#3A3040', fontSize: 14 }}>No check-ins yet from this agent.</div>
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+                  {[
+                    { label: 'Total Check-ins', value: checkins.length, color: '#D4A853' },
+                    { label: 'Completed', value: checkins.filter(c => c.evening_done).length, color: '#6BAE94' },
+                    { label: 'Missed', value: checkins.filter(c => c.evening_done === 0).length, color: '#E07B6A' },
+                  ].map((s, i) => (
+                    <div key={i} style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 22, color: s.color, fontWeight: 800 }}>{s.value}</div>
+                      <div style={{ fontSize: 10, color: '#3A3040', letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 4 }}>{s.label}</div>
                     </div>
-                  )}
-                  {c.evening_note && (
-                    <div style={{ fontSize: 12, color: '#B8B0A8', lineHeight: 1.5, marginTop: 4 }}>
-                      <span style={{ color: '#9B7EC8' }}>Evening:</span> {c.evening_note}
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {checkins.map((c, i) => (
+                    <div key={i} style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 14, padding: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <div style={{ fontSize: 13, color: '#EEE5D5', fontWeight: 700 }}>{c.date}</div>
+                        {c.evening_done !== null && (
+                          <div style={{ fontSize: 11, color: c.evening_done ? '#6BAE94' : '#E07B6A', fontWeight: 700, background: c.evening_done ? '#6BAE9415' : '#E07B6A15', padding: '3px 10px', borderRadius: 6 }}>
+                            {c.evening_done ? '✓ Completed' : '✗ Missed'}
+                          </div>
+                        )}
+                      </div>
+                      {c.morning_answer && (
+                        <div style={{ background: '#0A090D', border: '1px solid #1A1820', borderRadius: 10, padding: '12px', marginBottom: 8 }}>
+                          <div style={{ fontSize: 10, color: '#D4A853', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 6 }}>Morning — One thing to move closer to first sale</div>
+                          <div style={{ fontSize: 13, color: '#EEE5D5', lineHeight: 1.6 }}>{c.morning_answer}</div>
+                        </div>
+                      )}
+                      {c.evening_note && (
+                        <div style={{ background: '#0A090D', border: '1px solid #1A1820', borderRadius: 10, padding: '12px' }}>
+                          <div style={{ fontSize: 10, color: '#9B7EC8', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 6 }}>{c.evening_done ? 'Evening — What happened & learned' : 'Evening — What got in the way'}</div>
+                          <div style={{ fontSize: 13, color: '#EEE5D5', lineHeight: 1.6 }}>{c.evening_note}</div>
+                        </div>
+                      )}
+                      {!c.morning_answer && !c.evening_note && c.evening_done === null && (
+                        <div style={{ fontSize: 12, color: '#3A3040', fontStyle: 'italic' }}>No answers recorded for this day.</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

@@ -199,7 +199,7 @@ router.get('/agent/:id/profile', requireAuth, requireRole('dc', 'admin'), (req, 
   const progress = {};
   progressRows.forEach(r => { progress[`${r.week_index}-${r.task_index}`] = !!r.completed; });
 
-  const checkins = db.prepare('SELECT date, morning_answer, evening_done, evening_note FROM checkins WHERE user_id = ? ORDER BY created_at DESC LIMIT 14').all(agentId);
+  const checkins = db.prepare('SELECT date, morning_answer, evening_done, evening_note FROM checkins WHERE user_id = ? ORDER BY created_at DESC LIMIT 90').all(agentId);
 
   res.json({
     agent: {
