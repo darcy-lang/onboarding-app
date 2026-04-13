@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import Login from './components/Login.jsx';
 import AgentDashboard from './components/AgentDashboard.jsx';
 import DCDashboard from './components/DCDashboard.jsx';
-import AdminDashboard from './components/AdminDashboard.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -28,8 +27,7 @@ export default function App() {
 
   if (!user) return <Login onLogin={setUser} />;
   if (user.role === 'agent') return <AgentDashboard user={user} onLogout={handleLogout} />;
-  if (user.role === 'dc') return <DCDashboard user={user} onLogout={handleLogout} />;
-  if (user.role === 'admin') return <AdminDashboard user={user} onLogout={handleLogout} />;
+  if (user.role === 'dc' || user.role === 'admin') return <DCDashboard user={user} onLogout={handleLogout} />;
 
   return <Login onLogin={setUser} />;
 }

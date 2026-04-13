@@ -16,6 +16,12 @@ export default function DCDashboard({ user, onLogout }) {
   const [showTeamDashboard, setShowTeamDashboard] = useState(false);
   const [loading, setLoading] = useState(true);
   const [videoUrls, setVideoUrls] = useState({});
+  const [users, setUsers] = useState([]);
+  const [form, setForm] = useState({ username: '', password: '', role: 'agent', name: '' });
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
+  const [resetId, setResetId] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -28,6 +34,7 @@ export default function DCDashboard({ user, onLogout }) {
       setVideoUrls(vids.videos || {});
       setLoading(false);
     });
+    fetch('/api/user/all-users', { credentials: 'include' }).then(r => r.json()).then(data => setUsers(data.users || []));
   }, []);
 
   const toggleTask = (weekIdx, taskIdx, completed) => {
@@ -41,6 +48,35 @@ export default function DCDashboard({ user, onLogout }) {
     });
   };
 
+  const loadUsers = () => {
+    fetch('/api/user/all-users', { credentials: 'include' }).then(r => r.json()).then(data => setUsers(data.users || []));
+  };
+
+  const createUser = async () => {
+    setFormError(''); setFormSuccess('');
+    if (!form.username || !form.password || !form.name) return setFormError('All fields required');
+    const res = await fetch('/api/user/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(form) });
+    const data = await res.json();
+    if (!res.ok) return setFormError(data.error);
+    setFormSuccess(`User "${form.username}" created`);
+    setForm({ username: '', password: '', role: 'agent', name: '' });
+    loadUsers();
+  };
+
+  const deleteUser = async (id, name) => {
+    if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
+    await fetch(`/api/user/${id}`, { method: 'DELETE', credentials: 'include' });
+    loadUsers();
+  };
+
+  const resetPassword = async (id) => {
+    if (!newPassword || newPassword.length < 6) return setFormError('Password must be at least 6 characters');
+    await fetch(`/api/user/${id}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ password: newPassword }) });
+    setResetId(null); setNewPassword(''); setFormSuccess('Password updated');
+  };
+
+  const roleColor = { agent: '#D4A853', dc: '#6BAE94', admin: '#9B7EC8' };
+
   if (loading) return <div style={{ minHeight: '100vh', background: '#09080A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6BAE94', fontSize: 14 }}>Loading...</div>;
 
   const week = DC_WEEKS[wi];
@@ -52,7 +88,7 @@ export default function DCDashboard({ user, onLogout }) {
   const wkPct = Math.round((wkDone / week.tasks.length) * 100);
   const allDone = wkDone === week.tasks.length;
   const wkVideos = week.videos || [];
-  const tabs = ['tasks', ...(wkVideos.length > 0 ? ['videos'] : []), 'manage videos'];
+  const tabs = ['tasks', ...(wkVideos.length > 0 ? ['videos'] : []), 'manage videos', 'manage users'];
 
   if (showTeamDashboard) return <TeamDashboard onBack={() => setShowTeamDashboard(false)} />;
 
@@ -146,6 +182,57 @@ export default function DCDashboard({ user, onLogout }) {
         )}
         {tab === 'videos' && <div>{wkVideos.map(id => <VideoCard key={id} id={id} ac={ac} videoUrls={videoUrls} />)}</div>}
         {tab === 'manage videos' && <VideoUploadPanel />}
+        {tab === 'manage users' && (
+          <div>
+            {/* Create User */}
+            <div style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 16, padding: '20px', marginBottom: 20 }}>
+              <div style={{ fontSize: 10, letterSpacing: '0.2em', color: ac, textTransform: 'uppercase', marginBottom: 14 }}>Add New User</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Full name" style={{ background: '#100F14', border: '1px solid #2A2430', borderRadius: 10, padding: '12px 14px', fontSize: 14, color: '#EEE5D5', outline: 'none' }} />
+                <input value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} placeholder="Username" autoCapitalize="none" style={{ background: '#100F14', border: '1px solid #2A2430', borderRadius: 10, padding: '12px 14px', fontSize: 14, color: '#EEE5D5', outline: 'none' }} />
+                <input value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} placeholder="Password" style={{ background: '#100F14', border: '1px solid #2A2430', borderRadius: 10, padding: '12px 14px', fontSize: 14, color: '#EEE5D5', outline: 'none' }} />
+                <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} style={{ background: '#100F14', border: '1px solid #2A2430', borderRadius: 10, padding: '12px 14px', fontSize: 14, color: '#EEE5D5', outline: 'none' }}>
+                  <option value="agent">Agent</option>
+                  <option value="dc">Director Comercial</option>
+                </select>
+              </div>
+              {formError && <div style={{ color: '#E07B6A', fontSize: 13, marginBottom: 10 }}>{formError}</div>}
+              {formSuccess && <div style={{ color: '#6BAE94', fontSize: 13, marginBottom: 10 }}>{formSuccess}</div>}
+              <button onClick={createUser} style={{ background: ac, color: '#09080A', border: 'none', borderRadius: 10, padding: '12px 24px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>Create User</button>
+            </div>
+
+            {/* User List */}
+            <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#3A3040', textTransform: 'uppercase', marginBottom: 10 }}>All Users ({users.length})</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {users.map(u => (
+                <div key={u.id} style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 12, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, color: '#EEE5D5', fontWeight: 600 }}>{u.name}</div>
+                      <div style={{ fontSize: 12, color: '#3A3040', marginTop: 2 }}>@{u.username}</div>
+                    </div>
+                    <div style={{ background: `${roleColor[u.role]}20`, border: `1px solid ${roleColor[u.role]}40`, borderRadius: 6, padding: '3px 10px', fontSize: 11, color: roleColor[u.role], fontWeight: 700 }}>{u.role}</div>
+                    {u.role === 'agent' && (
+                      <button onClick={() => setViewingAgentId(u.id)} style={{ background: '#D4A85320', border: '1px solid #D4A85340', color: '#D4A853', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>View Profile</button>
+                    )}
+                    {u.role !== 'admin' && (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => { setResetId(resetId === u.id ? null : u.id); setNewPassword(''); }} style={{ background: 'transparent', border: '1px solid #2A2430', color: '#6A6070', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12 }}>Reset PW</button>
+                        <button onClick={() => deleteUser(u.id, u.name)} style={{ background: 'transparent', border: '1px solid #3A1A1A', color: '#E07B6A', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12 }}>Delete</button>
+                      </div>
+                    )}
+                  </div>
+                  {resetId === u.id && (
+                    <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                      <input value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New password (min 6 chars)" style={{ flex: 1, background: '#100F14', border: '1px solid #2A2430', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#EEE5D5', outline: 'none' }} />
+                      <button onClick={() => resetPassword(u.id)} style={{ background: '#D4A853', color: '#09080A', border: 'none', borderRadius: 10, padding: '10px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Save</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
           {wi > 0 && <button onClick={() => { setWi(wi - 1); setTab('tasks'); }} style={{ flex: 1, background: '#0D0C10', border: '1px solid #1A1820', color: '#3A3040', padding: '13px', borderRadius: 14, cursor: 'pointer', fontSize: 13 }}>← Week {DC_WEEKS[wi - 1].week}</button>}

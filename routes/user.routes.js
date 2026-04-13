@@ -89,14 +89,14 @@ router.post('/dc-prompt', requireAuth, requireRole('dc', 'admin'), (req, res) =>
 
 // ── ADMIN ──────────────────────────────────────────────────────
 
-// GET /api/user/all-users — admin only
-router.get('/all-users', requireAuth, requireRole('admin'), (req, res) => {
+// GET /api/user/all-users — dc and admin
+router.get('/all-users', requireAuth, requireRole('dc', 'admin'), (req, res) => {
   const users = db.prepare('SELECT id, username, role, name, created_at FROM users ORDER BY created_at').all();
   res.json({ users });
 });
 
-// POST /api/user/create — admin creates a new user
-router.post('/create', requireAuth, requireRole('admin'), (req, res) => {
+// POST /api/user/create — dc/admin creates a new user
+router.post('/create', requireAuth, requireRole('dc', 'admin'), (req, res) => {
   const { username, password, role, name } = req.body;
   if (!username || !password || !role || !name) return res.status(400).json({ error: 'All fields required' });
   if (!['agent', 'dc'].includes(role)) return res.status(400).json({ error: 'Role must be agent or dc' });
@@ -111,8 +111,8 @@ router.post('/create', requireAuth, requireRole('admin'), (req, res) => {
   }
 });
 
-// DELETE /api/user/:id — admin deletes a user
-router.delete('/:id', requireAuth, requireRole('admin'), (req, res) => {
+// DELETE /api/user/:id — dc/admin deletes a user
+router.delete('/:id', requireAuth, requireRole('dc', 'admin'), (req, res) => {
   const id = parseInt(req.params.id);
   if (id === req.user.id) return res.status(400).json({ error: 'Cannot delete yourself' });
   db.prepare('DELETE FROM users WHERE id = ?').run(id);
@@ -123,8 +123,8 @@ router.delete('/:id', requireAuth, requireRole('admin'), (req, res) => {
   res.json({ ok: true });
 });
 
-// POST /api/user/:id/reset-password — admin resets password
-router.post('/:id/reset-password', requireAuth, requireRole('admin'), (req, res) => {
+// POST /api/user/:id/reset-password — dc/admin resets password
+router.post('/:id/reset-password', requireAuth, requireRole('dc', 'admin'), (req, res) => {
   const { password } = req.body;
   if (!password || password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
   const hash = bcrypt.hashSync(password, 10);
