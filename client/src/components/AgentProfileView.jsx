@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AGENT_WEEKS, PHASE_COLORS, PHASE_LABELS } from '../data.js';
+import { AGENT_WEEKS, PHASE_COLORS, PHASE_LABELS, DC_AGENT_TASKS } from '../data.js';
 
 export default function AgentProfileView({ agentId, onClose }) {
   const [agent, setAgent] = useState(null);
@@ -7,18 +7,33 @@ export default function AgentProfileView({ agentId, onClose }) {
   const [checkins, setCheckins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [wi, setWi] = useState(0);
+  const [dcTasks, setDcTasks] = useState({});
+  const [profileTab, setProfileTab] = useState('agent');
 
   useEffect(() => {
-    fetch(`/api/user/agent/${agentId}/profile`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(data => {
-        setAgent(data.agent);
-        setProgress(data.progress || {});
-        setCheckins(data.checkins || []);
-        setWi(data.agent?.current_week || 0);
-        setLoading(false);
-      });
+    Promise.all([
+      fetch(`/api/user/agent/${agentId}/profile`, { credentials: 'include' }).then(r => r.json()),
+      fetch(`/api/user/agent/${agentId}/dc-tasks`, { credentials: 'include' }).then(r => r.json())
+    ]).then(([data, dcData]) => {
+      setAgent(data.agent);
+      setProgress(data.progress || {});
+      setCheckins(data.checkins || []);
+      setDcTasks(dcData.progress || {});
+      setWi(data.agent?.current_week || 0);
+      setLoading(false);
+    });
   }, [agentId]);
+
+  const toggleDcTask = (weekIdx, taskIdx, completed) => {
+    const key = `${weekIdx}-${taskIdx}`;
+    setDcTasks(p => ({ ...p, [key]: completed }));
+    fetch(`/api/user/agent/${agentId}/dc-tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ week_index: weekIdx, task_index: taskIdx, completed })
+    });
+  };
 
   if (loading) return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(9,8,10,0.97)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -75,7 +90,15 @@ export default function AgentProfileView({ agentId, onClose }) {
           })}
         </div>
 
-        {/* Week detail */}
+        {/* Tab switcher */}
+        <div style={{ display: 'flex', borderBottom: '1px solid #1A1820', marginBottom: 16 }}>
+          {[{ id: 'agent', label: 'Agent Tasks' }, { id: 'dc', label: 'My Checklist' }].map(t => (
+            <button key={t.id} onClick={() => setProfileTab(t.id)} style={{ background: 'transparent', border: 'none', borderBottom: `2px solid ${profileTab === t.id ? ac : 'transparent'}`, color: profileTab === t.id ? ac : '#3A3040', padding: '7px 14px', cursor: 'pointer', fontSize: 12, transition: 'all 0.15s', marginBottom: -1 }}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* Agent tasks tab */}
+        {profileTab === 'agent' && (
         <div style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 16, padding: '18px', marginBottom: 20 }}>
           <div style={{ fontSize: 10, letterSpacing: '0.2em', color: ac, textTransform: 'uppercase', marginBottom: 6 }}>{PHASE_LABELS[week.phase]} · {week.days}</div>
           <div style={{ fontSize: 16, color: '#EEE5D5', fontWeight: 700, marginBottom: 14 }}>{week.action}</div>
@@ -101,6 +124,46 @@ export default function AgentProfileView({ agentId, onClose }) {
             <div style={{ fontSize: 11, color: '#3A3040' }}>{wkDone}/{week.tasks.length}</div>
           </div>
         </div>
+        )}
+
+        {/* DC checklist tab */}
+        {profileTab === 'dc' && (
+        <div style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 16, padding: '18px', marginBottom: 20 }}>
+          <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#D4A853', textTransform: 'uppercase', marginBottom: 6 }}>Your tasks with {agent.name} · Week {week.week}</div>
+          <div style={{ fontSize: 14, color: '#EEE5D5', fontWeight: 700, marginBottom: 14 }}>{week.dc || 'Support this agent through the week.'}</div>
+
+          {(DC_AGENT_TASKS[wi] || []).length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {DC_AGENT_TASKS[wi].map((task, ti) => {
+                const isDone = !!dcTasks[`${wi}-${ti}`];
+                return (
+                  <div key={ti} onClick={() => toggleDcTask(wi, ti, !isDone)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: isDone ? '#141210' : '#0A090D', border: `1px solid ${isDone ? '#D4A85330' : '#1A1820'}`, cursor: 'pointer', transition: 'all 0.15s' }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${isDone ? '#D4A853' : '#2A2430'}`, background: isDone ? '#D4A853' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
+                      {isDone && <span style={{ color: '#09080A', fontSize: 11, fontWeight: 800 }}>✓</span>}
+                    </div>
+                    <span style={{ fontSize: 13, color: isDone ? '#5A4A3A' : '#B8B0A8', textDecoration: isDone ? 'line-through' : 'none', transition: 'all 0.2s' }}>{task}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: '#3A3040' }}>No specific tasks this week.</div>
+          )}
+
+          {DC_AGENT_TASKS[wi] && DC_AGENT_TASKS[wi].length > 0 && (() => {
+            const dcWkDone = DC_AGENT_TASKS[wi].filter((_, i) => dcTasks[`${wi}-${i}`]).length;
+            const dcWkTotal = DC_AGENT_TASKS[wi].length;
+            return (
+              <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1, height: 4, background: '#1A1820', borderRadius: 2 }}>
+                  <div style={{ height: '100%', width: `${Math.round((dcWkDone / dcWkTotal) * 100)}%`, background: '#D4A853', borderRadius: 2, transition: 'width 0.3s' }} />
+                </div>
+                <div style={{ fontSize: 11, color: '#3A3040' }}>{dcWkDone}/{dcWkTotal}</div>
+              </div>
+            );
+          })()}
+        </div>
+        )}
 
         {/* Recent check-ins */}
         {checkins.length > 0 && (

@@ -65,6 +65,19 @@ db.exec(`
     UNIQUE(user_id, week_index, task_index)
   );
 
+  CREATE TABLE IF NOT EXISTS dc_agent_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dc_user_id INTEGER NOT NULL,
+    agent_id INTEGER NOT NULL,
+    week_index INTEGER NOT NULL,
+    task_index INTEGER NOT NULL,
+    completed INTEGER DEFAULT 0,
+    completed_at DATETIME,
+    FOREIGN KEY (dc_user_id) REFERENCES users(id),
+    FOREIGN KEY (agent_id) REFERENCES users(id),
+    UNIQUE(dc_user_id, agent_id, week_index, task_index)
+  );
+
   CREATE TABLE IF NOT EXISTS videos (
     video_id TEXT PRIMARY KEY CHECK(video_id IN ('v1','v2','v3','v4','v5','v6','v7','v8')),
     file_path TEXT NOT NULL,

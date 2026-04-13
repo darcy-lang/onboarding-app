@@ -27,6 +27,22 @@ export const AGENT_WEEKS = [
   { phase: 2, week: 12, days: "Days 56–60", action: "Close the sale. Present your numbers. Set your next target.", tasks: ["Close the sale OR have a reservation contract signed", "Final 90-day review — present your full numbers to Darcy", "Set your personal 6-month revenue target", "Identify your 3 strongest lead sources", "Commit to your next 90-day sprint"], dc: "Runs your graduation review. Sets your 6-month target with you.", target: "1 sale closed OR reservation signed", videos: [], script: null },
 ];
 
+// DC tasks to complete WITH each individual agent, per week
+export const DC_AGENT_TASKS = [
+  ["Run morning training Days 1–3 with agent", "Give agent the 90-day plan — explain it", "Show agent how to log contacts in CRM", "Join agent's first door knock on Day 5"],
+  ["Daily morning debrief with agent", "Review agent's CRM entries on Friday", "Coach agent if under 20 doors/day"],
+  ["Attend agent's first listing appointment", "Score agent 1–10 after appointment", "Debrief immediately after appointment", "Run objection training with agent"],
+  ["Review agent's listing photos and description", "Support agent on solo appointments", "Run 30-day review with agent and Darcy", "Set Week 5 targets with agent"],
+  ["Approve agent's listing before it goes live", "Train agent on buyer qualification questions", "Listen to agent's first buyer call", "Give written feedback same day"],
+  ["Attend agent's first viewing", "Debrief after viewing — buying signals?", "Check agent's follow-ups are within 2 hours", "Review agent's follow-up messages"],
+  ["Observe 1 viewing with agent this week", "Check agent is still doing 15 doors/day", "Review agent's pipeline: Hot/Warm/Cold"],
+  ["Run negotiation roleplay with agent", "Remind agent: never negotiate alone", "Run 60-day review with agent and Darcy", "Create intervention plan if agent is behind"],
+  ["Review agent's pipeline Monday meeting", "Join 1 difficult viewing with agent", "Coach agent on closing signals", "Agent names top 2 buyers most likely to offer"],
+  ["Be present on agent's offer negotiation", "Review counter-offer strategy with agent", "Manage seller communication with agent"],
+  ["Daily check-in on agent's open offers", "Coach agent on stalled offer recovery", "Prepare agent for reservation contract"],
+  ["Run 90-day graduation review with agent", "Present agent's numbers to Darcy", "Set agent's 6-month revenue target"],
+];
+
 export const DC_WEEKS = [
   { phase: 0, week: 1, days: "Days 1–5", action: "Walk every agent through their first door knock personally.", tasks: ["Run morning training Days 1–3: company, market, buyer profile", "Give every agent the 90-day plan — explain it out loud", "Set CRM standards — show exactly how to log a contact", "Accompany every agent on their first door knock", "Set up the daily WhatsApp check-in group"], target: "Every agent has CRM set up · 20 doors knocked per agent by Day 5", videos: ["v1", "v2"] },
   { phase: 0, week: 2, days: "Days 6–10", action: "Review every agent's CRM on Friday. Anyone below 20 doors/day — find out why today.", tasks: ["Run daily morning debrief: doors, leads, blockers", "Review all CRM entries every Friday", "Coach any agent under 20 doors/day individually", "Join 1 referral partner meeting with an agent", "Run objection roleplay in morning sessions"], target: "All agents at 20+ doors/day · 1 appointment booked across the team", videos: ["v3", "v4"] },

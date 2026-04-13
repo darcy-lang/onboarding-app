@@ -165,6 +165,29 @@ router.get('/agent-overview', requireAuth, requireRole('dc', 'admin'), (req, res
   res.json({ agents: result });
 });
 
+// GET /api/user/agent/:id/dc-tasks — DC's own checklist for this agent
+router.get('/agent/:id/dc-tasks', requireAuth, requireRole('dc', 'admin'), (req, res) => {
+  const agentId = parseInt(req.params.id);
+  const rows = db.prepare('SELECT week_index, task_index, completed FROM dc_agent_tasks WHERE dc_user_id = ? AND agent_id = ?').all(req.user.id, agentId);
+  const progress = {};
+  rows.forEach(r => { progress[`${r.week_index}-${r.task_index}`] = !!r.completed; });
+  res.json({ progress });
+});
+
+// POST /api/user/agent/:id/dc-tasks — toggle a DC task for this agent
+router.post('/agent/:id/dc-tasks', requireAuth, requireRole('dc', 'admin'), (req, res) => {
+  const agentId = parseInt(req.params.id);
+  const { week_index, task_index, completed } = req.body;
+  db.prepare(`
+    INSERT INTO dc_agent_tasks (dc_user_id, agent_id, week_index, task_index, completed, completed_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(dc_user_id, agent_id, week_index, task_index) DO UPDATE SET
+      completed = excluded.completed,
+      completed_at = excluded.completed_at
+  `).run(req.user.id, agentId, week_index, task_index, completed ? 1 : 0, completed ? new Date().toISOString() : null);
+  res.json({ ok: true });
+});
+
 // GET /api/user/agent/:id/profile — DC/Admin sees full agent progress
 router.get('/agent/:id/profile', requireAuth, requireRole('dc', 'admin'), (req, res) => {
   const agentId = parseInt(req.params.id);
