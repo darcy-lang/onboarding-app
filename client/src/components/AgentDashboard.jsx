@@ -58,16 +58,6 @@ export default function AgentDashboard({ user, onLogout }) {
     saveState(committed, newWi);
   };
 
-  // Calculate which week is unlocked based on account age
-  const getUnlockedWeek = () => {
-    if (!user.created_at) return 0;
-    const created = new Date(user.created_at);
-    const now = new Date();
-    const daysSinceCreated = Math.floor((now - created) / (1000 * 60 * 60 * 24));
-    return Math.min(Math.floor(daysSinceCreated / 7), AGENT_WEEKS.length - 1);
-  };
-  const maxUnlockedWeek = getUnlockedWeek();
-
   if (loading) return <div style={{ minHeight: '100vh', background: '#09080A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4A853', fontSize: 14 }}>Loading...</div>;
   if (!committed) return <CommitmentScreen agentName={user.name} onComplete={handleCommit} />;
 
@@ -102,10 +92,9 @@ export default function AgentDashboard({ user, onLogout }) {
       <div style={{ background: '#0A090D', borderBottom: '1px solid #1A1820', display: 'flex', overflowX: 'auto', flexShrink: 0 }}>
         {AGENT_WEEKS.map((w, i) => {
           const wd = w.tasks.filter((_, ti) => done[`${i}-${ti}`]).length;
-          const locked = i > maxUnlockedWeek;
           return (
-            <button key={i} onClick={() => !locked && changeWeek(i)} style={{ background: 'transparent', border: 'none', borderBottom: `3px solid ${i === wi ? PHASE_COLORS[w.phase] : 'transparent'}`, padding: '10px 13px', cursor: locked ? 'not-allowed' : 'pointer', color: locked ? '#1A1820' : (i === wi ? PHASE_COLORS[w.phase] : '#2A2430'), fontSize: 11, fontWeight: i === wi ? 700 : 400, whiteSpace: 'nowrap', transition: 'all 0.15s', flexShrink: 0, opacity: locked ? 0.4 : 1 }}>
-              {locked ? '🔒' : ''} Wk {w.week}{!locked && wd === w.tasks.length && <span style={{ marginLeft: 3, color: '#6BAE94' }}>✓</span>}
+            <button key={i} onClick={() => changeWeek(i)} style={{ background: 'transparent', border: 'none', borderBottom: `3px solid ${i === wi ? PHASE_COLORS[w.phase] : 'transparent'}`, padding: '10px 13px', cursor: 'pointer', color: i === wi ? PHASE_COLORS[w.phase] : '#2A2430', fontSize: 11, fontWeight: i === wi ? 700 : 400, whiteSpace: 'nowrap', transition: 'all 0.15s', flexShrink: 0 }}>
+              Wk {w.week}{wd === w.tasks.length && <span style={{ marginLeft: 3, color: '#6BAE94' }}>✓</span>}
             </button>
           );
         })}
@@ -169,15 +158,9 @@ export default function AgentDashboard({ user, onLogout }) {
         <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
           {wi > 0 && <button onClick={() => changeWeek(wi - 1)} style={{ flex: 1, background: '#0D0C10', border: '1px solid #1A1820', color: '#3A3040', padding: '13px', borderRadius: 14, cursor: 'pointer', fontSize: 13 }}>← Week {AGENT_WEEKS[wi - 1].week}</button>}
           {wi < AGENT_WEEKS.length - 1 && (
-            wi + 1 > maxUnlockedWeek ? (
-              <div style={{ flex: 2, background: '#1A1820', color: '#3A3040', padding: '13px', borderRadius: 14, fontSize: 13, textAlign: 'center' }}>
-                🔒 Week {AGENT_WEEKS[wi + 1].week} unlocks in {((wi + 1) * 7) - Math.floor((new Date() - new Date(user.created_at)) / (1000 * 60 * 60 * 24))} days
-              </div>
-            ) : (
-              <button onClick={() => changeWeek(wi + 1)} style={{ flex: 2, background: ac, border: 'none', color: '#09080A', padding: '13px', borderRadius: 14, cursor: 'pointer', fontSize: 14, fontWeight: 800 }}>
-                {allDone ? `✓ Week done — Week ${AGENT_WEEKS[wi + 1].week} →` : `Week ${AGENT_WEEKS[wi + 1].week} →`}
-              </button>
-            )
+            <button onClick={() => changeWeek(wi + 1)} style={{ flex: 2, background: ac, border: 'none', color: '#09080A', padding: '13px', borderRadius: 14, cursor: 'pointer', fontSize: 14, fontWeight: 800 }}>
+              {allDone ? `✓ Week done — Week ${AGENT_WEEKS[wi + 1].week} →` : `Week ${AGENT_WEEKS[wi + 1].week} →`}
+            </button>
           )}
         </div>
       </div>

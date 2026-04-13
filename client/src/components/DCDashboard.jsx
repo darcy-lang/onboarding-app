@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import DCMorningPrompt from './DCMorningPrompt.jsx';
 import VideoCard from './VideoCard.jsx';
 import VideoUploadPanel from './VideoUploadPanel.jsx';
+import AgentProfileView from './AgentProfileView.jsx';
 import { DC_WEEKS, PHASE_COLORS, PHASE_LABELS } from '../data.js';
 
 export default function DCDashboard({ user, onLogout }) {
@@ -10,6 +11,7 @@ export default function DCDashboard({ user, onLogout }) {
   const [tab, setTab] = useState('tasks');
   const [showPrompt, setShowPrompt] = useState(false);
   const [agentOverview, setAgentOverview] = useState([]);
+  const [viewingAgentId, setViewingAgentId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [videoUrls, setVideoUrls] = useState({});
 
@@ -53,6 +55,7 @@ export default function DCDashboard({ user, onLogout }) {
   return (
     <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", background: '#09080A', minHeight: '100vh', color: '#DDD5C8', display: 'flex', flexDirection: 'column' }}>
       {showPrompt && <DCMorningPrompt onClose={() => setShowPrompt(false)} />}
+      {viewingAgentId && <AgentProfileView agentId={viewingAgentId} onClose={() => setViewingAgentId(null)} />}
 
       <div style={{ background: '#0C0B0E', borderBottom: '1px solid #1A1820', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 14, color: '#EEE5D5', fontWeight: 700 }}>👩‍💼 {user.name}</div>
@@ -92,8 +95,8 @@ export default function DCDashboard({ user, onLogout }) {
             <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#3A3040', textTransform: 'uppercase', marginBottom: 12 }}>Agent Overview</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
               {agentOverview.map(agent => (
-                <div key={agent.id} style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 12, padding: '12px 14px' }}>
-                  <div style={{ fontSize: 13, color: '#EEE5D5', fontWeight: 600, marginBottom: 6 }}>{agent.name}</div>
+                <div key={agent.id} onClick={() => setViewingAgentId(agent.id)} style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 12, padding: '12px 14px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                  <div style={{ fontSize: 13, color: '#EEE5D5', fontWeight: 600, marginBottom: 6 }}>{agent.name} <span style={{ fontSize: 10, color: '#3A3040' }}>→ View</span></div>
                   <div style={{ fontSize: 11, color: '#3A3040', marginBottom: 2 }}>Week {agent.current_week + 1} · {agent.completed_tasks} tasks done</div>
                   <div style={{ fontSize: 11, color: agent.committed ? '#6BAE94' : '#D4A853' }}>{agent.committed ? '✓ Committed' : '⏳ Not yet committed'}</div>
                   {agent.last_checkin && <div style={{ fontSize: 10, color: '#2A2430', marginTop: 4 }}>Last check-in: {agent.last_checkin.date}</div>}

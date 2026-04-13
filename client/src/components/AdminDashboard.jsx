@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import VideoUploadPanel from './VideoUploadPanel.jsx';
+import AgentProfileView from './AgentProfileView.jsx';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [users, setUsers] = useState([]);
@@ -9,6 +10,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const [resetId, setResetId] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(true);
+  const [viewingAgentId, setViewingAgentId] = useState(null);
 
   const loadUsers = () => {
     fetch('/api/user/all-users', { credentials: 'include' })
@@ -65,6 +67,8 @@ export default function AdminDashboard({ user, onLogout }) {
         <button onClick={onLogout} style={{ background: 'transparent', border: '1px solid #2A2430', color: '#4A4050', borderRadius: 10, padding: '8px 12px', cursor: 'pointer', fontSize: 12 }}>Sign Out</button>
       </div>
 
+      {viewingAgentId && <AgentProfileView agentId={viewingAgentId} onClose={() => setViewingAgentId(null)} />}
+
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 20px' }}>
 
         {/* Create User */}
@@ -95,6 +99,9 @@ export default function AdminDashboard({ user, onLogout }) {
                   <div style={{ fontSize: 12, color: '#3A3040', marginTop: 2 }}>@{u.username}</div>
                 </div>
                 <div style={{ background: `${roleColor[u.role]}20`, border: `1px solid ${roleColor[u.role]}40`, borderRadius: 6, padding: '3px 10px', fontSize: 11, color: roleColor[u.role], fontWeight: 700 }}>{u.role}</div>
+                {u.role === 'agent' && (
+                  <button onClick={() => setViewingAgentId(u.id)} style={{ background: '#D4A85320', border: '1px solid #D4A85340', color: '#D4A853', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>View Profile</button>
+                )}
                 {u.role !== 'admin' && (
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button onClick={() => { setResetId(resetId === u.id ? null : u.id); setNewPassword(''); }} style={{ background: 'transparent', border: '1px solid #2A2430', color: '#6A6070', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12 }}>Reset PW</button>

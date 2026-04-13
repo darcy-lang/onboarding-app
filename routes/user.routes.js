@@ -152,4 +152,28 @@ router.get('/agent-overview', requireAuth, requireRole('dc', 'admin'), (req, res
   res.json({ agents: result });
 });
 
+// GET /api/user/agent/:id/profile — DC/Admin sees full agent progress
+router.get('/agent/:id/profile', requireAuth, requireRole('dc', 'admin'), (req, res) => {
+  const agentId = parseInt(req.params.id);
+  const agent = db.prepare('SELECT id, name, username, created_at FROM users WHERE id = ? AND role = ?').get(agentId, 'agent');
+  if (!agent) return res.status(404).json({ error: 'Agent not found' });
+
+  const state = db.prepare('SELECT committed, current_week FROM agent_state WHERE user_id = ?').get(agentId);
+  const progressRows = db.prepare('SELECT week_index, task_index, completed FROM agent_progress WHERE user_id = ?').all(agentId);
+  const progress = {};
+  progressRows.forEach(r => { progress[`${r.week_index}-${r.task_index}`] = !!r.completed; });
+
+  const checkins = db.prepare('SELECT date, morning_answer, evening_done, evening_note FROM checkins WHERE user_id = ? ORDER BY created_at DESC LIMIT 14').all(agentId);
+
+  res.json({
+    agent: {
+      ...agent,
+      committed: state?.committed || 0,
+      current_week: state?.current_week || 0,
+    },
+    progress,
+    checkins
+  });
+});
+
 export default router;
