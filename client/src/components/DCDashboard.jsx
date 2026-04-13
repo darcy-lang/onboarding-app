@@ -17,7 +17,7 @@ export default function DCDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [videoUrls, setVideoUrls] = useState({});
   const [users, setUsers] = useState([]);
-  const [form, setForm] = useState({ username: '', password: '', role: 'agent', name: '' });
+  const [form, setForm] = useState({ username: '', password: '' });
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [resetId, setResetId] = useState(null);
@@ -55,12 +55,12 @@ export default function DCDashboard({ user, onLogout }) {
 
   const createUser = async () => {
     setFormError(''); setFormSuccess('');
-    if (!form.username || !form.password || !form.name) return setFormError('All fields required');
-    const res = await fetch('/api/user/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(form) });
+    if (!form.username || !form.password) return setFormError('All fields required');
+    const res = await fetch('/api/user/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ username: form.username, password: form.password, role: 'agent', name: form.username }) });
     const data = await res.json();
     if (!res.ok) return setFormError(data.error);
     setFormSuccess(`User "${form.username}" created`);
-    setForm({ username: '', password: '', role: 'agent', name: '' });
+    setForm({ username: '', password: '' });
     loadUsers();
   };
 
@@ -113,13 +113,8 @@ export default function DCDashboard({ user, onLogout }) {
             <div style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 16, padding: '20px', marginBottom: 20 }}>
               <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#9B7EC8', textTransform: 'uppercase', marginBottom: 14 }}>Add New User</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Full name" style={{ background: '#100F14', border: '1px solid #2A2430', borderRadius: 10, padding: '12px 14px', fontSize: 14, color: '#EEE5D5', outline: 'none' }} />
                 <input value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} placeholder="Username" autoCapitalize="none" style={{ background: '#100F14', border: '1px solid #2A2430', borderRadius: 10, padding: '12px 14px', fontSize: 14, color: '#EEE5D5', outline: 'none' }} />
                 <input value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} placeholder="Password" style={{ background: '#100F14', border: '1px solid #2A2430', borderRadius: 10, padding: '12px 14px', fontSize: 14, color: '#EEE5D5', outline: 'none' }} />
-                <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} style={{ background: '#100F14', border: '1px solid #2A2430', borderRadius: 10, padding: '12px 14px', fontSize: 14, color: '#EEE5D5', outline: 'none' }}>
-                  <option value="agent">Agent</option>
-                  <option value="dc">Director Comercial</option>
-                </select>
               </div>
               {formError && <div style={{ color: '#E07B6A', fontSize: 13, marginBottom: 10 }}>{formError}</div>}
               {formSuccess && <div style={{ color: '#6BAE94', fontSize: 13, marginBottom: 10 }}>{formSuccess}</div>}
