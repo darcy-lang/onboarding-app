@@ -134,19 +134,32 @@ router.post('/:id/reset-password', requireAuth, requireRole('admin'), (req, res)
 
 // GET /api/user/agent-overview — DC sees all agents progress summary
 router.get('/agent-overview', requireAuth, requireRole('dc', 'admin'), (req, res) => {
-  const agents = db.prepare('SELECT id, name, username FROM users WHERE role = ?').all('agent');
+  const agents = db.prepare('SELECT id, name, username, created_at FROM users WHERE role = ?').all('agent');
   const result = agents.map(agent => {
     const state = db.prepare('SELECT committed, current_week FROM agent_state WHERE user_id = ?').get(agent.id);
     const completedTasks = db.prepare('SELECT COUNT(*) as count FROM agent_progress WHERE user_id = ? AND completed = 1').get(agent.id);
-    const lastCheckin = db.prepare('SELECT date, evening_done FROM checkins WHERE user_id = ? ORDER BY created_at DESC LIMIT 1').get(agent.id);
+    const totalCheckins = db.prepare('SELECT COUNT(*) as count FROM checkins WHERE user_id = ?').get(agent.id);
+    const completedCheckins = db.prepare('SELECT COUNT(*) as count FROM checkins WHERE user_id = ? AND evening_done = 1').get(agent.id);
+    const lastCheckin = db.prepare('SELECT date, evening_done, morning_answer FROM checkins WHERE user_id = ? ORDER BY created_at DESC LIMIT 1').get(agent.id);
+    const progressRows = db.prepare('SELECT week_index, task_index, completed FROM agent_progress WHERE user_id = ?').all(agent.id);
+    const weekProgress = {};
+    progressRows.forEach(r => {
+      if (!weekProgress[r.week_index]) weekProgress[r.week_index] = { done: 0, total: 0 };
+      weekProgress[r.week_index].total++;
+      if (r.completed) weekProgress[r.week_index].done++;
+    });
     return {
       id: agent.id,
       name: agent.name,
       username: agent.username,
+      created_at: agent.created_at,
       committed: state?.committed || 0,
       current_week: state?.current_week || 0,
       completed_tasks: completedTasks?.count || 0,
-      last_checkin: lastCheckin || null
+      total_checkins: totalCheckins?.count || 0,
+      completed_checkins: completedCheckins?.count || 0,
+      last_checkin: lastCheckin || null,
+      week_progress: weekProgress
     };
   });
   res.json({ agents: result });

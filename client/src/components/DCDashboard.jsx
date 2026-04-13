@@ -3,6 +3,7 @@ import DCMorningPrompt from './DCMorningPrompt.jsx';
 import VideoCard from './VideoCard.jsx';
 import VideoUploadPanel from './VideoUploadPanel.jsx';
 import AgentProfileView from './AgentProfileView.jsx';
+import TeamDashboard from './TeamDashboard.jsx';
 import { DC_WEEKS, PHASE_COLORS, PHASE_LABELS } from '../data.js';
 
 export default function DCDashboard({ user, onLogout }) {
@@ -12,6 +13,7 @@ export default function DCDashboard({ user, onLogout }) {
   const [showPrompt, setShowPrompt] = useState(false);
   const [agentOverview, setAgentOverview] = useState([]);
   const [viewingAgentId, setViewingAgentId] = useState(null);
+  const [showTeamDashboard, setShowTeamDashboard] = useState(false);
   const [loading, setLoading] = useState(true);
   const [videoUrls, setVideoUrls] = useState({});
 
@@ -52,6 +54,8 @@ export default function DCDashboard({ user, onLogout }) {
   const wkVideos = week.videos || [];
   const tabs = ['tasks', ...(wkVideos.length > 0 ? ['videos'] : []), 'manage videos'];
 
+  if (showTeamDashboard) return <TeamDashboard onBack={() => setShowTeamDashboard(false)} />;
+
   return (
     <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", background: '#09080A', minHeight: '100vh', color: '#DDD5C8', display: 'flex', flexDirection: 'column' }}>
       {showPrompt && <DCMorningPrompt onClose={() => setShowPrompt(false)} />}
@@ -61,6 +65,7 @@ export default function DCDashboard({ user, onLogout }) {
         <div style={{ fontSize: 14, color: '#EEE5D5', fontWeight: 700 }}>👩‍💼 {user.name}</div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ fontSize: 11, color: '#3A3040' }}>{pct}% done</div>
+          <button onClick={() => setShowTeamDashboard(true)} style={{ background: '#D4A853', color: '#09080A', border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>📊 Team</button>
           <button onClick={() => setShowPrompt(true)} style={{ background: '#6BAE94', color: '#09080A', border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>🌅 My Focus</button>
           <button onClick={onLogout} style={{ background: 'transparent', border: '1px solid #2A2430', color: '#4A4050', borderRadius: 10, padding: '8px 12px', cursor: 'pointer', fontSize: 12 }}>Sign Out</button>
         </div>
