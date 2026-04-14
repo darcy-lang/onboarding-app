@@ -143,42 +143,70 @@ export default function AgentDashboard({ user, onLogout }) {
           <div style={{ fontSize: 19, color: '#EEE5D5', lineHeight: 1.4, fontWeight: 700 }}>{week.action}</div>
         </div>
 
-        {/* Daily Tracker */}
-        <div style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 14, padding: '14px 16px', marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ fontSize: 10, letterSpacing: '0.2em', color: ac, textTransform: 'uppercase' }}>Today's Numbers</div>
-            <div style={{ fontSize: 10, color: '#3A3040' }}>Totals below</div>
+        {/* 90-Day Goal Tracker */}
+        <div style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 14, padding: '16px 16px 10px', marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontSize: 10, letterSpacing: '0.2em', color: ac, textTransform: 'uppercase' }}>90-Day Goals</div>
+            <div style={{ fontSize: 10, color: '#3A3040' }}>Slide to log today</div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
-              { key: 'doors', label: 'Doors Knocked', icon: '🚪', max: 50 },
-              { key: 'contacts', label: 'New Contacts', icon: '📇', max: 20 },
-              { key: 'appointments', label: 'Appointments', icon: '📅', max: 5 },
-              { key: 'viewings', label: 'Viewings', icon: '🏠', max: 5 },
-              { key: 'offers', label: 'Offers', icon: '📝', max: 3 },
+              { key: 'doors', label: 'Doors Knocked', icon: '🚪', dayMax: 50, goal: 900 },
+              { key: 'contacts', label: 'New Contacts', icon: '📇', dayMax: 20, goal: 300 },
+              { key: 'appointments', label: 'Appointments', icon: '📅', dayMax: 10, goal: 100 },
+              { key: 'viewings', label: 'Viewings', icon: '🏠', dayMax: 10, goal: 80 },
+              { key: 'offers', label: 'Offers', icon: '📝', dayMax: 5, goal: 30 },
             ].map(f => {
               const val = tracker[f.key] || 0;
+              const total = parseInt(totals[f.key]) || 0;
+              const goalPct = Math.min((total / f.goal) * 100, 100);
+              const goalDone = total >= f.goal;
               return (
                 <div key={f.key}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
                     <div style={{ fontSize: 12, color: '#B8B0A8' }}>{f.icon} {f.label}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 18, color: '#EEE5D5', fontWeight: 800, minWidth: 24, textAlign: 'right' }}>{val}</span>
-                      <span style={{ fontSize: 10, color: '#3A3040' }}>/ total {totals[f.key] || 0}</span>
-                    </div>
+                    <div style={{ fontSize: 10, color: goalDone ? '#6BAE94' : '#5A5060' }}>{total} / {f.goal}</div>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max={f.max}
-                    value={val}
-                    onChange={e => updateTracker(f.key, e.target.value)}
-                    style={{ width: '100%', height: 6, appearance: 'none', WebkitAppearance: 'none', background: `linear-gradient(to right, ${ac} ${(val / f.max) * 100}%, #1A1820 ${(val / f.max) * 100}%)`, borderRadius: 3, outline: 'none', cursor: 'pointer', accentColor: ac }}
-                  />
+                  {/* 90-day progress bar */}
+                  <div style={{ width: '100%', height: 8, background: '#1A1820', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
+                    <div style={{ height: '100%', width: `${goalPct}%`, background: goalDone ? '#6BAE94' : `linear-gradient(90deg, ${ac}, ${ac}CC)`, borderRadius: 4, transition: 'width 0.4s ease' }} />
+                  </div>
+                  {/* Today slider */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 10, color: '#3A3040', minWidth: 36 }}>Today</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max={f.dayMax}
+                      value={val}
+                      onChange={e => updateTracker(f.key, e.target.value)}
+                      style={{ flex: 1, height: 4, appearance: 'none', WebkitAppearance: 'none', background: `linear-gradient(to right, ${ac}80 ${(val / f.dayMax) * 100}%, #141218 ${(val / f.dayMax) * 100}%)`, borderRadius: 2, outline: 'none', cursor: 'pointer', accentColor: ac }}
+                    />
+                    <span style={{ fontSize: 14, color: '#EEE5D5', fontWeight: 700, minWidth: 20, textAlign: 'right' }}>{val}</span>
+                  </div>
                 </div>
               );
             })}
           </div>
+          {/* Overall 90-day completion */}
+          {(() => {
+            const fields = [
+              { key: 'doors', goal: 900 }, { key: 'contacts', goal: 300 },
+              { key: 'appointments', goal: 100 }, { key: 'viewings', goal: 80 }, { key: 'offers', goal: 30 }
+            ];
+            const overallPct = Math.round(fields.reduce((sum, f) => sum + Math.min(((parseInt(totals[f.key]) || 0) / f.goal) * 100, 100), 0) / fields.length);
+            return (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #1A1820' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ fontSize: 10, letterSpacing: '0.15em', color: '#EEE5D5', textTransform: 'uppercase' }}>Overall 90-Day Progress</div>
+                  <div style={{ fontSize: 14, color: overallPct >= 100 ? '#6BAE94' : ac, fontWeight: 800 }}>{overallPct}%</div>
+                </div>
+                <div style={{ width: '100%', height: 10, background: '#1A1820', borderRadius: 5, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${overallPct}%`, background: overallPct >= 100 ? '#6BAE94' : `linear-gradient(90deg, ${ac}, ${ac}DD)`, borderRadius: 5, transition: 'width 0.4s ease' }} />
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <div style={{ display: 'flex', borderBottom: '1px solid #1A1820', marginBottom: 16 }}>
