@@ -68,10 +68,10 @@ router.post('/checkin', requireAuth, requireRole('agent'), async (req, res) => {
 router.get('/tracker', requireAuth, requireRole('agent'), async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const todayRes = await pool.query('SELECT doors, contacts, appointments, viewings, offers FROM agent_tracker WHERE user_id = $1 AND date = $2', [req.user.id, today]);
-    const totalsRes = await pool.query('SELECT COALESCE(SUM(doors),0) as doors, COALESCE(SUM(contacts),0) as contacts, COALESCE(SUM(appointments),0) as appointments, COALESCE(SUM(viewings),0) as viewings, COALESCE(SUM(offers),0) as offers FROM agent_tracker WHERE user_id = $1', [req.user.id]);
+    const todayRes = await pool.query('SELECT doors, contacts, appointments, viewings, offers, listings FROM agent_tracker WHERE user_id = $1 AND date = $2', [req.user.id, today]);
+    const totalsRes = await pool.query('SELECT COALESCE(SUM(doors),0) as doors, COALESCE(SUM(contacts),0) as contacts, COALESCE(SUM(appointments),0) as appointments, COALESCE(SUM(viewings),0) as viewings, COALESCE(SUM(offers),0) as offers, COALESCE(SUM(listings),0) as listings FROM agent_tracker WHERE user_id = $1', [req.user.id]);
     res.json({
-      today: todayRes.rows[0] || { doors: 0, contacts: 0, appointments: 0, viewings: 0, offers: 0 },
+      today: todayRes.rows[0] || { doors: 0, contacts: 0, appointments: 0, viewings: 0, offers: 0, listings: 0 },
       totals: totalsRes.rows[0]
     });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
@@ -81,14 +81,14 @@ router.get('/tracker', requireAuth, requireRole('agent'), async (req, res) => {
 router.post('/tracker', requireAuth, requireRole('agent'), async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const { doors, contacts, appointments, viewings, offers } = req.body;
+    const { doors, contacts, appointments, viewings, offers, listings } = req.body;
     await pool.query(`
-      INSERT INTO agent_tracker (user_id, date, doors, contacts, appointments, viewings, offers)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO agent_tracker (user_id, date, doors, contacts, appointments, viewings, offers, listings)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       ON CONFLICT(user_id, date) DO UPDATE SET
         doors = EXCLUDED.doors, contacts = EXCLUDED.contacts,
-        appointments = EXCLUDED.appointments, viewings = EXCLUDED.viewings, offers = EXCLUDED.offers
-    `, [req.user.id, today, doors || 0, contacts || 0, appointments || 0, viewings || 0, offers || 0]);
+        appointments = EXCLUDED.appointments, viewings = EXCLUDED.viewings, offers = EXCLUDED.offers, listings = EXCLUDED.listings
+    `, [req.user.id, today, doors || 0, contacts || 0, appointments || 0, viewings || 0, offers || 0, listings || 0]);
     res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
@@ -97,7 +97,7 @@ router.post('/tracker', requireAuth, requireRole('agent'), async (req, res) => {
 router.get('/tracker/:id', requireAuth, requireRole('dc', 'admin'), async (req, res) => {
   try {
     const agentId = parseInt(req.params.id);
-    const totalsRes = await pool.query('SELECT COALESCE(SUM(doors),0) as doors, COALESCE(SUM(contacts),0) as contacts, COALESCE(SUM(appointments),0) as appointments, COALESCE(SUM(viewings),0) as viewings, COALESCE(SUM(offers),0) as offers FROM agent_tracker WHERE user_id = $1', [agentId]);
+    const totalsRes = await pool.query('SELECT COALESCE(SUM(doors),0) as doors, COALESCE(SUM(contacts),0) as contacts, COALESCE(SUM(appointments),0) as appointments, COALESCE(SUM(viewings),0) as viewings, COALESCE(SUM(offers),0) as offers, COALESCE(SUM(listings),0) as listings FROM agent_tracker WHERE user_id = $1', [agentId]);
     res.json({ totals: totalsRes.rows[0] });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });

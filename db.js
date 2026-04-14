@@ -93,6 +93,7 @@ async function initDb() {
       appointments INTEGER DEFAULT 0,
       viewings INTEGER DEFAULT 0,
       offers INTEGER DEFAULT 0,
+      listings INTEGER DEFAULT 0,
       UNIQUE(user_id, date)
     );
 
@@ -104,6 +105,11 @@ async function initDb() {
       uploaded_at TIMESTAMP DEFAULT NOW()
     );
   `);
+
+  // Add listings column if missing (migration for existing databases)
+  try {
+    await pool.query('ALTER TABLE agent_tracker ADD COLUMN IF NOT EXISTS listings INTEGER DEFAULT 0');
+  } catch (e) { /* column already exists */ }
 
   // Seed default users if none exist
   const { rows } = await pool.query('SELECT COUNT(*) as count FROM users');

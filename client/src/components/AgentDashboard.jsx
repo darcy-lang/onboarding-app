@@ -62,8 +62,8 @@ export default function AgentDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [videoUrls, setVideoUrls] = useState({});
   const [trainingUrls, setTrainingUrls] = useState({});
-  const [tracker, setTracker] = useState({ doors: 0, contacts: 0, appointments: 0, viewings: 0, offers: 0 });
-  const [totals, setTotals] = useState({ doors: 0, contacts: 0, appointments: 0, viewings: 0, offers: 0 });
+  const [tracker, setTracker] = useState({ doors: 0, contacts: 0, appointments: 0, viewings: 0, offers: 0, listings: 0 });
+  const [totals, setTotals] = useState({ doors: 0, contacts: 0, appointments: 0, viewings: 0, offers: 0, listings: 0 });
   const [celebration, setCelebration] = useState(null);
   const [showMilestoneUnlock, setShowMilestoneUnlock] = useState(null);
   const prevPctRef = useRef(0);
@@ -101,7 +101,7 @@ export default function AgentDashboard({ user, onLogout }) {
         setTotals(data.totals || {});
         // Track which goals are already done
         const t = data.totals || {};
-        const goals = { doors: 400, contacts: 125, appointments: 15, viewings: 12, offers: 2 };
+        const goals = { doors: 400, contacts: 125, appointments: 15, viewings: 12, offers: 2, listings: 6 };
         Object.keys(goals).forEach(k => {
           prevGoalDoneRef.current[k] = (parseInt(t[k]) || 0) >= goals[k];
         });
@@ -188,12 +188,12 @@ export default function AgentDashboard({ user, onLogout }) {
 
     // Check if a goal was just reached
     if (!initialLoadRef.current) {
-      const goals = { doors: 400, contacts: 125, appointments: 15, viewings: 12, offers: 2 };
+      const goals = { doors: 400, contacts: 125, appointments: 15, viewings: 12, offers: 2, listings: 6 };
       const newTotal = newTotals[field] || 0;
       if (newTotal >= goals[field] && !prevGoalDoneRef.current[field]) {
         prevGoalDoneRef.current[field] = true;
         fireGoalConfetti();
-        const labels = { doors: 'Doors Knocked', contacts: 'New Contacts', appointments: 'Appointments', viewings: 'Viewings', offers: 'Offers' };
+        const labels = { doors: 'Doors Knocked', contacts: 'New Contacts', appointments: 'Appointments', viewings: 'Viewings', offers: 'Offers', listings: 'New Listings' };
         setCelebration({ type: 'goal', label: labels[field] });
         setTimeout(() => setCelebration(null), 3000);
       }
@@ -485,7 +485,7 @@ export default function AgentDashboard({ user, onLogout }) {
           {(() => {
             const fields = [
               { key: 'doors', goal: 400 }, { key: 'contacts', goal: 125 },
-              { key: 'appointments', goal: 15 }, { key: 'viewings', goal: 12 }, { key: 'offers', goal: 2 }
+              { key: 'appointments', goal: 15 }, { key: 'viewings', goal: 12 }, { key: 'offers', goal: 2 }, { key: 'listings', goal: 6 }
             ];
             const overallPct = Math.round(fields.reduce((sum, f) => sum + Math.min(((parseInt(totals[f.key]) || 0) / f.goal) * 100, 100), 0) / fields.length);
             return (
@@ -502,6 +502,7 @@ export default function AgentDashboard({ user, onLogout }) {
               { key: 'appointments', label: 'Appointments', icon: '📅', goal: 15 },
               { key: 'viewings', label: 'Viewings', icon: '🏠', goal: 12 },
               { key: 'offers', label: 'Offers', icon: '📝', goal: 2 },
+              { key: 'listings', label: 'New Listings', icon: '🏡', goal: 6 },
             ].map(f => {
               const total = parseInt(totals[f.key]) || 0;
               const goalPct = Math.min((total / f.goal) * 100, 100);
