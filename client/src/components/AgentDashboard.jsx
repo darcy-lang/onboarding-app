@@ -91,6 +91,21 @@ export default function AgentDashboard({ user, onLogout }) {
 
   return (
     <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", background: '#09080A', minHeight: '100vh', color: '#DDD5C8', display: 'flex', flexDirection: 'column' }}>
+      <style>{`
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none; appearance: none;
+          width: 18px; height: 18px; border-radius: 50%;
+          background: #EEE5D5; border: 2px solid #09080A;
+          cursor: pointer; margin-top: -6px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        }
+        input[type="range"]::-moz-range-thumb {
+          width: 18px; height: 18px; border-radius: 50%;
+          background: #EEE5D5; border: 2px solid #09080A;
+          cursor: pointer;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        }
+      `}</style>
       {showCheckin && <DailyCheckIn agentName={user.name} currentWeek={wi} weekAction={week.action} onClose={() => setShowCheckin(false)} />}
 
       <div style={{ background: '#0C0B0E', borderBottom: '1px solid #1A1820', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -134,27 +149,35 @@ export default function AgentDashboard({ user, onLogout }) {
             <div style={{ fontSize: 10, letterSpacing: '0.2em', color: ac, textTransform: 'uppercase' }}>Today's Numbers</div>
             <div style={{ fontSize: 10, color: '#3A3040' }}>Totals below</div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              { key: 'doors', label: 'Doors', icon: '🚪' },
-              { key: 'contacts', label: 'Contacts', icon: '📇' },
-              { key: 'appointments', label: 'Appts', icon: '📅' },
-              { key: 'viewings', label: 'Viewings', icon: '🏠' },
-              { key: 'offers', label: 'Offers', icon: '📝' },
-            ].map(f => (
-              <div key={f.key} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 14, marginBottom: 4 }}>{f.icon}</div>
-                <input
-                  type="number"
-                  min="0"
-                  value={tracker[f.key] || 0}
-                  onChange={e => updateTracker(f.key, e.target.value)}
-                  style={{ width: '100%', background: '#100F14', border: '1px solid #2A2430', borderRadius: 8, padding: '8px 4px', fontSize: 18, color: '#EEE5D5', textAlign: 'center', outline: 'none', fontWeight: 700 }}
-                />
-                <div style={{ fontSize: 9, color: '#3A3040', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{f.label}</div>
-                <div style={{ fontSize: 11, color: ac, fontWeight: 700, marginTop: 2 }}>{totals[f.key] || 0}</div>
-              </div>
-            ))}
+              { key: 'doors', label: 'Doors Knocked', icon: '🚪', max: 50 },
+              { key: 'contacts', label: 'New Contacts', icon: '📇', max: 20 },
+              { key: 'appointments', label: 'Appointments', icon: '📅', max: 5 },
+              { key: 'viewings', label: 'Viewings', icon: '🏠', max: 5 },
+              { key: 'offers', label: 'Offers', icon: '📝', max: 3 },
+            ].map(f => {
+              const val = tracker[f.key] || 0;
+              return (
+                <div key={f.key}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <div style={{ fontSize: 12, color: '#B8B0A8' }}>{f.icon} {f.label}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 18, color: '#EEE5D5', fontWeight: 800, minWidth: 24, textAlign: 'right' }}>{val}</span>
+                      <span style={{ fontSize: 10, color: '#3A3040' }}>/ total {totals[f.key] || 0}</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max={f.max}
+                    value={val}
+                    onChange={e => updateTracker(f.key, e.target.value)}
+                    style={{ width: '100%', height: 6, appearance: 'none', WebkitAppearance: 'none', background: `linear-gradient(to right, ${ac} ${(val / f.max) * 100}%, #1A1820 ${(val / f.max) * 100}%)`, borderRadius: 3, outline: 'none', cursor: 'pointer', accentColor: ac }}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
 
