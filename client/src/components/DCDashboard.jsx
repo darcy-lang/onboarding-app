@@ -5,7 +5,7 @@ import VideoUploadPanel from './VideoUploadPanel.jsx';
 import AgentProfileView from './AgentProfileView.jsx';
 import TeamDashboard from './TeamDashboard.jsx';
 import TrainingVideoManager from './TrainingVideoManager.jsx';
-import { DC_WEEKS, PHASE_COLORS, PHASE_LABELS } from '../data.js';
+import { DC_WEEKS, PHASE_COLORS, PHASE_LABELS, TRAINING_VIDEOS } from '../data.js';
 
 export default function DCDashboard({ user, onLogout }) {
   const [wi, setWi] = useState(0);
@@ -25,6 +25,7 @@ export default function DCDashboard({ user, onLogout }) {
   const [newPassword, setNewPassword] = useState('');
   const [showManageUsers, setShowManageUsers] = useState(false);
   const [showTrainingVideos, setShowTrainingVideos] = useState(false);
+  const [trainingUrls, setTrainingUrls] = useState({});
 
   useEffect(() => {
     Promise.all([
@@ -38,6 +39,7 @@ export default function DCDashboard({ user, onLogout }) {
       setLoading(false);
     });
     fetch('/api/user/all-users', { credentials: 'include' }).then(r => r.json()).then(data => setUsers(data.users || []));
+    fetch('/api/videos/training', { credentials: 'include' }).then(r => r.json()).then(data => setTrainingUrls(data.videos || {}));
   }, []);
 
   const toggleTask = (weekIdx, taskIdx, completed) => {
@@ -91,13 +93,15 @@ export default function DCDashboard({ user, onLogout }) {
   const wkPct = Math.round((wkDone / week.tasks.length) * 100);
   const allDone = wkDone === week.tasks.length;
   const wkVideos = week.videos || [];
-  const tabs = ['tasks', ...(wkVideos.length > 0 ? ['videos'] : [])];
+  const wkTraining = TRAINING_VIDEOS.filter(v => v.week === wi && trainingUrls[v.id]);
+  const hasVideos = wkVideos.length > 0 || wkTraining.length > 0;
+  const tabs = ['tasks', ...(hasVideos ? ['videos'] : [])];
 
   if (showTeamDashboard) return <TeamDashboard onBack={() => setShowTeamDashboard(false)} />;
 
   return (
     <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", background: '#09080A', minHeight: '100vh', color: '#DDD5C8', display: 'flex', flexDirection: 'column' }}>
-      {showTrainingVideos && <TrainingVideoManager onClose={() => setShowTrainingVideos(false)} />}
+      {showTrainingVideos && <TrainingVideoManager onClose={() => { setShowTrainingVideos(false); fetch('/api/videos/training', { credentials: 'include' }).then(r => r.json()).then(data => setTrainingUrls(data.videos || {})); }} />}
       {showPrompt && <DCMorningPrompt onClose={() => setShowPrompt(false)} />}
       {viewingAgentId && <AgentProfileView agentId={viewingAgentId} onClose={() => setViewingAgentId(null)} />}
 
@@ -243,7 +247,34 @@ export default function DCDashboard({ user, onLogout }) {
             </div>
           </div>
         )}
-        {tab === 'videos' && <div>{wkVideos.map(id => <VideoCard key={id} id={id} ac={ac} videoUrls={videoUrls} />)}</div>}
+        {tab === 'videos' && (
+          <div>
+            {wkVideos.map(id => <VideoCard key={id} id={id} ac={ac} videoUrls={videoUrls} />)}
+            {wkTraining.map(tv => {
+              const loomUrl = trainingUrls[tv.id];
+              const embedMatch = loomUrl.match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
+              const embedUrl = embedMatch ? `https://www.loom.com/embed/${embedMatch[1]}` : null;
+              return (
+                <div key={tv.id} style={{ background: `${ac}0D`, border: `1px solid ${ac}35`, borderRadius: 12, padding: '14px 16px', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                    <div style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>🎓</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, color: '#EEE5D5', fontWeight: 500 }}>{tv.title}</div>
+                      <div style={{ fontSize: 11, color: ac, marginTop: 2 }}>{tv.topic}</div>
+                    </div>
+                  </div>
+                  {embedUrl ? (
+                    <div style={{ marginTop: 12, position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: 10, overflow: 'hidden' }}>
+                      <iframe src={embedUrl} frameBorder="0" allowFullScreen style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
+                    </div>
+                  ) : (
+                    <a href={loomUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 10, background: ac, color: '#080807', padding: '10px 24px', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>▶ Watch Now</a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
 
         <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
