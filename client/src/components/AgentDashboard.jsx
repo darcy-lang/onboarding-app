@@ -74,7 +74,7 @@ export default function AgentDashboard({ user, onLogout }) {
   const wkPct = Math.round((wkDone / week.tasks.length) * 100);
   const allDone = wkDone === week.tasks.length;
   const wkTraining = TRAINING_VIDEOS.filter(v => v.week === wi && trainingUrls[v.id]);
-  const tabs = ['tasks', 'videos', ...(week.script ? ['script'] : [])];
+  const tabs = ['tasks', ...(wkTraining.length > 0 ? ['videos'] : []), ...(week.script ? ['script'] : [])];
 
   return (
     <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", background: '#09080A', minHeight: '100vh', color: '#DDD5C8', display: 'flex', flexDirection: 'column' }}>
