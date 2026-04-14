@@ -91,7 +91,7 @@ export default function DCDashboard({ user, onLogout }) {
   const wkPct = Math.round((wkDone / week.tasks.length) * 100);
   const allDone = wkDone === week.tasks.length;
   const wkVideos = week.videos || [];
-  const tabs = ['tasks', ...(wkVideos.length > 0 ? ['videos'] : []), 'manage videos'];
+  const tabs = ['tasks', ...(wkVideos.length > 0 ? ['videos'] : [])];
 
   if (showTeamDashboard) return <TeamDashboard onBack={() => setShowTeamDashboard(false)} />;
 
@@ -244,7 +244,7 @@ export default function DCDashboard({ user, onLogout }) {
           </div>
         )}
         {tab === 'videos' && <div>{wkVideos.map(id => <VideoCard key={id} id={id} ac={ac} videoUrls={videoUrls} />)}</div>}
-        {tab === 'manage videos' && <VideoUploadPanel />}
+
 
         <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
           {wi > 0 && <button onClick={() => { setWi(wi - 1); setTab('tasks'); }} style={{ flex: 1, background: '#0D0C10', border: '1px solid #1A1820', color: '#3A3040', padding: '13px', borderRadius: 14, cursor: 'pointer', fontSize: 13 }}>← Week {DC_WEEKS[wi - 1].week}</button>}
