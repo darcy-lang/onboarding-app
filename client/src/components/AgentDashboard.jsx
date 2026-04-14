@@ -13,6 +13,8 @@ export default function AgentDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [videoUrls, setVideoUrls] = useState({});
   const [trainingUrls, setTrainingUrls] = useState({});
+  const [tracker, setTracker] = useState({ doors: 0, contacts: 0, appointments: 0, viewings: 0, offers: 0 });
+  const [totals, setTotals] = useState({ doors: 0, contacts: 0, appointments: 0, viewings: 0, offers: 0 });
 
   useEffect(() => {
     fetch('/api/user/progress', { credentials: 'include' })
@@ -26,6 +28,9 @@ export default function AgentDashboard({ user, onLogout }) {
     fetch('/api/videos', { credentials: 'include' })
       .then(r => r.json())
       .then(data => setVideoUrls(data.videos || {}));
+    fetch('/api/user/tracker', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => { setTracker(data.today || {}); setTotals(data.totals || {}); });
     fetch('/api/videos/training', { credentials: 'include' })
       .then(r => r.json())
       .then(data => setTrainingUrls(data.videos || {}));
@@ -60,6 +65,14 @@ export default function AgentDashboard({ user, onLogout }) {
     setWi(newWi);
     setTab('tasks');
     saveState(committed, newWi);
+  };
+
+  const updateTracker = (field, value) => {
+    const v = Math.max(0, parseInt(value) || 0);
+    const updated = { ...tracker, [field]: v };
+    setTracker(updated);
+    setTotals(prev => ({ ...prev, [field]: (parseInt(prev[field]) || 0) - (parseInt(tracker[field]) || 0) + v }));
+    fetch('/api/user/tracker', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(updated) });
   };
 
   if (loading) return <div style={{ minHeight: '100vh', background: '#09080A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4A853', fontSize: 14 }}>Loading...</div>;
@@ -113,6 +126,36 @@ export default function AgentDashboard({ user, onLogout }) {
         <div style={{ background: `${ac}12`, border: `1.5px solid ${ac}35`, borderRadius: 16, padding: '20px', marginBottom: 18 }}>
           <div style={{ fontSize: 10, letterSpacing: '0.2em', color: ac, textTransform: 'uppercase', marginBottom: 8 }}>Your Priority This Week</div>
           <div style={{ fontSize: 19, color: '#EEE5D5', lineHeight: 1.4, fontWeight: 700 }}>{week.action}</div>
+        </div>
+
+        {/* Daily Tracker */}
+        <div style={{ background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 14, padding: '14px 16px', marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ fontSize: 10, letterSpacing: '0.2em', color: ac, textTransform: 'uppercase' }}>Today's Numbers</div>
+            <div style={{ fontSize: 10, color: '#3A3040' }}>Totals below</div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+            {[
+              { key: 'doors', label: 'Doors', icon: '🚪' },
+              { key: 'contacts', label: 'Contacts', icon: '📇' },
+              { key: 'appointments', label: 'Appts', icon: '📅' },
+              { key: 'viewings', label: 'Viewings', icon: '🏠' },
+              { key: 'offers', label: 'Offers', icon: '📝' },
+            ].map(f => (
+              <div key={f.key} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 14, marginBottom: 4 }}>{f.icon}</div>
+                <input
+                  type="number"
+                  min="0"
+                  value={tracker[f.key] || 0}
+                  onChange={e => updateTracker(f.key, e.target.value)}
+                  style={{ width: '100%', background: '#100F14', border: '1px solid #2A2430', borderRadius: 8, padding: '8px 4px', fontSize: 18, color: '#EEE5D5', textAlign: 'center', outline: 'none', fontWeight: 700 }}
+                />
+                <div style={{ fontSize: 9, color: '#3A3040', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{f.label}</div>
+                <div style={{ fontSize: 11, color: ac, fontWeight: 700, marginTop: 2 }}>{totals[f.key] || 0}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={{ display: 'flex', borderBottom: '1px solid #1A1820', marginBottom: 16 }}>

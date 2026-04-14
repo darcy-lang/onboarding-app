@@ -84,6 +84,18 @@ async function initDb() {
       added_at TIMESTAMP DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS agent_tracker (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      date TEXT NOT NULL,
+      doors INTEGER DEFAULT 0,
+      contacts INTEGER DEFAULT 0,
+      appointments INTEGER DEFAULT 0,
+      viewings INTEGER DEFAULT 0,
+      offers INTEGER DEFAULT 0,
+      UNIQUE(user_id, date)
+    );
+
     CREATE TABLE IF NOT EXISTS videos (
       video_id TEXT PRIMARY KEY,
       file_path TEXT NOT NULL,
