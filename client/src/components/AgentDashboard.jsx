@@ -499,10 +499,10 @@ export default function AgentDashboard({ user, onLogout }) {
             {[
               { key: 'doors', label: 'Doors Knocked', icon: '🚪', goal: 400 },
               { key: 'contacts', label: 'New Contacts', icon: '📇', goal: 125 },
+              { key: 'listings', label: 'New Listings', icon: '🏡', goal: 6 },
               { key: 'appointments', label: 'Appointments', icon: '📅', goal: 15 },
               { key: 'viewings', label: 'Viewings', icon: '🏠', goal: 12 },
               { key: 'offers', label: 'Offers', icon: '📝', goal: 2 },
-              { key: 'listings', label: 'New Listings', icon: '🏡', goal: 6 },
             ].map(f => {
               const total = parseInt(totals[f.key]) || 0;
               const goalPct = Math.min((total / f.goal) * 100, 100);
