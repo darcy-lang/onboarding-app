@@ -94,8 +94,8 @@ export default function DCDashboard({ user, onLogout }) {
   const allDone = wkDone === week.tasks.length;
   const wkVideos = week.videos || [];
   const wkTraining = TRAINING_VIDEOS.filter(v => v.week === wi && trainingUrls[v.id]);
-  const hasVideos = wkVideos.length > 0 || wkTraining.length > 0;
-  const tabs = ['tasks', ...(hasVideos ? ['videos'] : [])];
+  const allWkTraining = TRAINING_VIDEOS.filter(v => v.week === wi);
+  const tabs = ['tasks', 'videos'];
 
   if (showTeamDashboard) return <TeamDashboard onBack={() => setShowTeamDashboard(false)} />;
 
@@ -250,24 +250,31 @@ export default function DCDashboard({ user, onLogout }) {
         {tab === 'videos' && (
           <div>
             {wkVideos.map(id => <VideoCard key={id} id={id} ac={ac} videoUrls={videoUrls} />)}
-            {wkTraining.map(tv => {
+            {allWkTraining.map(tv => {
               const loomUrl = trainingUrls[tv.id];
-              const embedMatch = loomUrl.match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
+              const hasVideo = !!loomUrl;
+              const embedMatch = loomUrl?.match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
               const embedUrl = embedMatch ? `https://www.loom.com/embed/${embedMatch[1]}` : null;
               return (
-                <div key={tv.id} style={{ background: `${ac}0D`, border: `1px solid ${ac}35`, borderRadius: 12, padding: '14px 16px', marginBottom: 8 }}>
+                <div key={tv.id} style={{ background: hasVideo ? `${ac}0D` : '#0C0B09', border: `1px solid ${hasVideo ? ac + '35' : '#1C1A14'}`, borderRadius: 12, padding: '14px 16px', marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                    <div style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>🎓</div>
+                    <div style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>{hasVideo ? '🎓' : '🎬'}</div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, color: '#EEE5D5', fontWeight: 500 }}>{tv.title}</div>
-                      <div style={{ fontSize: 11, color: ac, marginTop: 2 }}>{tv.topic}</div>
+                      <div style={{ fontSize: 14, color: hasVideo ? '#EEE5D5' : '#5A5040', fontWeight: 500 }}>{tv.title}</div>
+                      <div style={{ fontSize: 11, color: hasVideo ? ac : '#4A3820', marginTop: 2 }}>{tv.topic}</div>
                     </div>
+                    {hasVideo ? (
+                      <div style={{ fontSize: 11, color: '#6BAE94', fontWeight: 600 }}>✓ Added</div>
+                    ) : (
+                      <button onClick={() => setShowTrainingVideos(true)} style={{ background: ac, color: '#09080A', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Add Video</button>
+                    )}
                   </div>
-                  {embedUrl ? (
+                  {hasVideo && embedUrl && (
                     <div style={{ marginTop: 12, position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: 10, overflow: 'hidden' }}>
                       <iframe src={embedUrl} frameBorder="0" allowFullScreen style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
                     </div>
-                  ) : (
+                  )}
+                  {hasVideo && !embedUrl && (
                     <a href={loomUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 10, background: ac, color: '#080807', padding: '10px 24px', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>▶ Watch Now</a>
                   )}
                 </div>

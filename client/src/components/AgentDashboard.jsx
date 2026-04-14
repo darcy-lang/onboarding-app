@@ -75,8 +75,7 @@ export default function AgentDashboard({ user, onLogout }) {
   const allDone = wkDone === week.tasks.length;
   const wkVideos = week.videos || [];
   const wkTraining = TRAINING_VIDEOS.filter(v => v.week === wi && trainingUrls[v.id]);
-  const hasVideos = wkVideos.length > 0 || wkTraining.length > 0;
-  const tabs = ['tasks', ...(hasVideos ? ['videos'] : []), ...(week.script ? ['script'] : [])];
+  const tabs = ['tasks', 'videos', ...(week.script ? ['script'] : [])];
 
   return (
     <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", background: '#09080A', minHeight: '100vh', color: '#DDD5C8', display: 'flex', flexDirection: 'column' }}>
@@ -156,7 +155,7 @@ export default function AgentDashboard({ user, onLogout }) {
         {tab === 'videos' && (
           <div>
             {wkVideos.map(id => <VideoCard key={id} id={id} ac={ac} videoUrls={videoUrls} />)}
-            {wkTraining.map(tv => {
+            {wkTraining.length > 0 ? wkTraining.map(tv => {
               const loomUrl = trainingUrls[tv.id];
               const embedMatch = loomUrl.match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
               const embedUrl = embedMatch ? `https://www.loom.com/embed/${embedMatch[1]}` : null;
@@ -178,7 +177,9 @@ export default function AgentDashboard({ user, onLogout }) {
                   )}
                 </div>
               );
-            })}
+            }) : wkVideos.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '30px 0', color: '#3A3040', fontSize: 13 }}>No videos added for this week yet. Check back soon!</div>
+            )}
           </div>
         )}
         {tab === 'script' && week.script && (
