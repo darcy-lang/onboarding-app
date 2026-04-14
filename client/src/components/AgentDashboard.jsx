@@ -1,8 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import confetti from 'canvas-confetti';
 import CommitmentScreen from './CommitmentScreen.jsx';
 import DailyCheckIn from './DailyCheckIn.jsx';
 import VideoCard from './VideoCard.jsx';
 import { AGENT_WEEKS, PHASE_COLORS, PHASE_LABELS, TRAINING_VIDEOS } from '../data.js';
+
+// ── Level & Milestone System ──
+const LEVELS = [
+  { min: 0,  icon: '🌱', title: 'Rookie',       color: '#6BAE94' },
+  { min: 25, icon: '⭐', title: 'Rising Star',   color: '#D4A853' },
+  { min: 50, icon: '🔥', title: 'Closer',        color: '#E07A3A' },
+  { min: 75, icon: '💎', title: 'Elite Agent',    color: '#A07BE0' },
+  { min: 100,icon: '🏆', title: 'Legend',         color: '#FFD700' },
+];
+
+const MILESTONES = [
+  { pct: 25, icon: '⭐', badge: 'Rising Star',     desc: 'Reached 25% of your 90-day journey!' },
+  { pct: 50, icon: '🔥', badge: 'Halfway Hero',    desc: 'You\'re 50% through — keep pushing!' },
+  { pct: 75, icon: '💎', badge: 'Almost There',     desc: '75% done — the finish line is close!' },
+  { pct: 100,icon: '🏆', badge: 'Legend',           desc: 'You completed the 90-day program!' },
+];
+
+function getLevel(pct) {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (pct >= LEVELS[i].min) return LEVELS[i];
+  }
+  return LEVELS[0];
+}
+
+function getUnlockedMilestones(pct) {
+  return MILESTONES.filter(m => pct >= m.pct);
+}
+
+// ── Confetti helpers ──
+function fireConfetti() {
+  const end = Date.now() + 1500;
+  const colors = ['#D4A853', '#6BAE94', '#E07A3A', '#A07BE0', '#EEE5D5', '#FFD700'];
+  (function frame() {
+    confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors });
+    confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  })();
+}
+
+function fireBigConfetti() {
+  confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#D4A853', '#6BAE94', '#E07A3A', '#A07BE0', '#FFD700'] });
+  setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { y: 0.5 }, colors: ['#D4A853', '#FFD700', '#EEE5D5'] }), 400);
+  setTimeout(() => confetti({ particleCount: 60, spread: 80, origin: { y: 0.7 }, colors: ['#6BAE94', '#A07BE0', '#E07A3A'] }), 800);
+}
+
+function fireGoalConfetti() {
+  confetti({ particleCount: 100, spread: 70, origin: { y: 0.65 }, colors: ['#6BAE94', '#EEE5D5', '#D4A853'] });
+}
 
 export default function AgentDashboard({ user, onLogout }) {
   const [committed, setCommitted] = useState(false);
@@ -15,6 +64,12 @@ export default function AgentDashboard({ user, onLogout }) {
   const [trainingUrls, setTrainingUrls] = useState({});
   const [tracker, setTracker] = useState({ doors: 0, contacts: 0, appointments: 0, viewings: 0, offers: 0 });
   const [totals, setTotals] = useState({ doors: 0, contacts: 0, appointments: 0, viewings: 0, offers: 0 });
+  const [celebration, setCelebration] = useState(null);
+  const [showMilestoneUnlock, setShowMilestoneUnlock] = useState(null);
+  const prevPctRef = useRef(0);
+  const prevWeekDoneRef = useRef({});
+  const prevGoalDoneRef = useRef({});
+  const initialLoadRef = useRef(true);
 
   useEffect(() => {
     fetch('/api/user/progress', { credentials: 'include' })
@@ -23,14 +78,34 @@ export default function AgentDashboard({ user, onLogout }) {
         setDone(data.progress || {});
         setCommitted(!!data.state?.committed);
         setWi(data.state?.current_week || 0);
+        // Calculate initial values for refs
+        const d = data.progress || {};
+        const totalT = AGENT_WEEKS.flatMap(w => w.tasks).length;
+        const doneC = Object.values(d).filter(Boolean).length;
+        prevPctRef.current = Math.round((doneC / totalT) * 100);
+        // Track which weeks are already done
+        AGENT_WEEKS.forEach((w, i) => {
+          const wd = w.tasks.filter((_, ti) => d[`${i}-${ti}`]).length;
+          prevWeekDoneRef.current[i] = wd === w.tasks.length;
+        });
         setLoading(false);
+        setTimeout(() => { initialLoadRef.current = false; }, 500);
       });
     fetch('/api/videos', { credentials: 'include' })
       .then(r => r.json())
       .then(data => setVideoUrls(data.videos || {}));
     fetch('/api/user/tracker', { credentials: 'include' })
       .then(r => r.json())
-      .then(data => { setTracker(data.today || {}); setTotals(data.totals || {}); });
+      .then(data => {
+        setTracker(data.today || {});
+        setTotals(data.totals || {});
+        // Track which goals are already done
+        const t = data.totals || {};
+        const goals = { doors: 400, contacts: 125, appointments: 15, viewings: 12, offers: 2 };
+        Object.keys(goals).forEach(k => {
+          prevGoalDoneRef.current[k] = (parseInt(t[k]) || 0) >= goals[k];
+        });
+      });
     fetch('/api/videos/training', { credentials: 'include' })
       .then(r => r.json())
       .then(data => setTrainingUrls(data.videos || {}));
@@ -50,15 +125,51 @@ export default function AgentDashboard({ user, onLogout }) {
     saveState(true, wi);
   };
 
+  const checkMilestone = useCallback((newPct) => {
+    if (initialLoadRef.current) return;
+    const oldPct = prevPctRef.current;
+    for (const m of MILESTONES) {
+      if (oldPct < m.pct && newPct >= m.pct) {
+        fireBigConfetti();
+        setShowMilestoneUnlock(m);
+        setTimeout(() => setShowMilestoneUnlock(null), 4000);
+        break;
+      }
+    }
+    prevPctRef.current = newPct;
+  }, []);
+
   const toggleTask = (weekIdx, taskIdx, completed) => {
     const key = `${weekIdx}-${taskIdx}`;
-    setDone(p => ({ ...p, [key]: completed }));
+    const newDone = { ...done, [key]: completed };
+    setDone(newDone);
     fetch('/api/user/progress', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ week_index: weekIdx, task_index: taskIdx, completed })
     });
+
+    // Check if week just got completed
+    if (completed && !initialLoadRef.current) {
+      const wk = AGENT_WEEKS[weekIdx];
+      const wkNowDone = wk.tasks.every((_, ti) => ti === taskIdx ? true : !!newDone[`${weekIdx}-${ti}`]);
+      if (wkNowDone && !prevWeekDoneRef.current[weekIdx]) {
+        prevWeekDoneRef.current[weekIdx] = true;
+        fireConfetti();
+        setCelebration({ type: 'week', week: wk.week });
+        setTimeout(() => setCelebration(null), 3000);
+      }
+    }
+    if (!completed) {
+      prevWeekDoneRef.current[weekIdx] = false;
+    }
+
+    // Check milestone
+    const totalT = AGENT_WEEKS.flatMap(w => w.tasks).length;
+    const doneC = Object.values(newDone).filter(Boolean).length;
+    const newPct = Math.round((doneC / totalT) * 100);
+    checkMilestone(newPct);
   };
 
   const changeWeek = (newWi) => {
@@ -71,8 +182,25 @@ export default function AgentDashboard({ user, onLogout }) {
     const v = Math.max(0, parseInt(value) || 0);
     const updated = { ...tracker, [field]: v };
     setTracker(updated);
-    setTotals(prev => ({ ...prev, [field]: (parseInt(prev[field]) || 0) - (parseInt(tracker[field]) || 0) + v }));
+    const newTotals = { ...totals, [field]: (parseInt(totals[field]) || 0) - (parseInt(tracker[field]) || 0) + v };
+    setTotals(newTotals);
     fetch('/api/user/tracker', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(updated) });
+
+    // Check if a goal was just reached
+    if (!initialLoadRef.current) {
+      const goals = { doors: 400, contacts: 125, appointments: 15, viewings: 12, offers: 2 };
+      const newTotal = newTotals[field] || 0;
+      if (newTotal >= goals[field] && !prevGoalDoneRef.current[field]) {
+        prevGoalDoneRef.current[field] = true;
+        fireGoalConfetti();
+        const labels = { doors: 'Doors Knocked', contacts: 'New Contacts', appointments: 'Appointments', viewings: 'Viewings', offers: 'Offers' };
+        setCelebration({ type: 'goal', label: labels[field] });
+        setTimeout(() => setCelebration(null), 3000);
+      }
+      if (newTotal < goals[field]) {
+        prevGoalDoneRef.current[field] = false;
+      }
+    }
   };
 
   const updateTotal = (field, newTotal, goal) => {
@@ -96,6 +224,9 @@ export default function AgentDashboard({ user, onLogout }) {
   const allDone = wkDone === week.tasks.length;
   const wkTraining = TRAINING_VIDEOS.filter(v => v.week === wi && trainingUrls[v.id]);
   const tabs = ['tasks', ...(wkTraining.length > 0 ? ['videos'] : []), ...(week.script ? ['script'] : [])];
+  const level = getLevel(pct);
+  const unlockedMilestones = getUnlockedMilestones(pct);
+  const nextLevel = LEVELS.find(l => l.min > pct);
 
   return (
     <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", background: '#09080A', minHeight: '100vh', color: '#DDD5C8', display: 'flex', flexDirection: 'column' }}>
@@ -113,22 +244,126 @@ export default function AgentDashboard({ user, onLogout }) {
           cursor: pointer;
           box-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
+        @keyframes celebrateIn {
+          0% { transform: translateY(-30px) scale(0.8); opacity: 0; }
+          50% { transform: translateY(5px) scale(1.05); }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes celebrateOut {
+          0% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(0.9) translateY(-20px); }
+        }
+        @keyframes milestoneGlow {
+          0%, 100% { box-shadow: 0 0 20px rgba(212,168,83,0.3); }
+          50% { box-shadow: 0 0 40px rgba(212,168,83,0.6); }
+        }
+        @keyframes badgePop {
+          0% { transform: scale(0); }
+          60% { transform: scale(1.3); }
+          100% { transform: scale(1); }
+        }
+        @keyframes levelPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
       `}</style>
+
+      {/* Celebration Toast */}
+      {celebration && (
+        <div style={{
+          position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9999, animation: 'celebrateIn 0.4s ease-out',
+          background: 'linear-gradient(135deg, #1A1820 0%, #0D0C10 100%)',
+          border: `2px solid ${ac}60`, borderRadius: 16, padding: '16px 28px',
+          display: 'flex', alignItems: 'center', gap: 12,
+          boxShadow: `0 8px 30px rgba(0,0,0,0.5), 0 0 20px ${ac}30`
+        }}>
+          <span style={{ fontSize: 28, animation: 'badgePop 0.5s ease-out' }}>
+            {celebration.type === 'week' ? '🎉' : '🎯'}
+          </span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#EEE5D5' }}>
+              {celebration.type === 'week' ? `Week ${celebration.week} Complete!` : `Goal Hit!`}
+            </div>
+            <div style={{ fontSize: 11, color: ac }}>
+              {celebration.type === 'week' ? 'All tasks done — amazing work!' : `${celebration.label} target reached!`}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Milestone Unlock Banner */}
+      {showMilestoneUnlock && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(9,8,10,0.85)', animation: 'celebrateIn 0.5s ease-out'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1A1820, #0D0C10)',
+            border: `2px solid ${showMilestoneUnlock.pct === 100 ? '#FFD700' : '#D4A853'}60`,
+            borderRadius: 24, padding: '40px 50px', textAlign: 'center', maxWidth: 340,
+            animation: 'milestoneGlow 1.5s ease-in-out infinite'
+          }}>
+            <div style={{ fontSize: 60, marginBottom: 12, animation: 'badgePop 0.6s ease-out' }}>{showMilestoneUnlock.icon}</div>
+            <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#D4A853', textTransform: 'uppercase', marginBottom: 8 }}>Milestone Unlocked</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#EEE5D5', marginBottom: 8 }}>{showMilestoneUnlock.badge}</div>
+            <div style={{ fontSize: 13, color: '#8A8090', lineHeight: 1.6 }}>{showMilestoneUnlock.desc}</div>
+            <div style={{ marginTop: 16, fontSize: 11, color: '#3A3040' }}>{showMilestoneUnlock.pct}% complete</div>
+          </div>
+        </div>
+      )}
+
       {showCheckin && <DailyCheckIn agentName={user.name} currentWeek={wi} weekAction={week.action} onClose={() => setShowCheckin(false)} />}
 
-      <div style={{ background: '#0C0B0E', borderBottom: '1px solid #1A1820', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <div style={{ fontSize: 14, color: '#EEE5D5', fontWeight: 700 }}>🧑‍💼 {user.name}</div>
+      {/* Header with Level */}
+      <div style={{ background: '#0C0B0E', borderBottom: '1px solid #1A1820', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            fontSize: 18, width: 32, height: 32, borderRadius: 10,
+            background: `${level.color}18`, border: `1.5px solid ${level.color}40`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: pct >= 100 ? 'levelPulse 2s ease-in-out infinite' : 'none'
+          }}>{level.icon}</div>
+          <div>
+            <div style={{ fontSize: 13, color: '#EEE5D5', fontWeight: 700 }}>{user.name}</div>
+            <div style={{ fontSize: 10, color: level.color, fontWeight: 600 }}>{level.title}</div>
+          </div>
+        </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ fontSize: 11, color: '#3A3040' }}>{pct}% done</div>
+          <div style={{ fontSize: 11, color: '#3A3040' }}>{pct}%</div>
           <button onClick={() => setShowCheckin(true)} style={{ background: '#D4A853', color: '#09080A', border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>☀️ Check In</button>
           <button onClick={onLogout} style={{ background: 'transparent', border: '1px solid #2A2430', color: '#4A4050', borderRadius: 10, padding: '8px 12px', cursor: 'pointer', fontSize: 12 }}>Sign Out</button>
         </div>
       </div>
 
-      <div style={{ height: 3, background: '#191714' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg,${ac},#EEE5D5)`, transition: 'width 0.5s' }} />
+      {/* XP Progress Bar to next level */}
+      <div style={{ height: 4, background: '#191714', position: 'relative' }}>
+        <div style={{
+          height: '100%', width: `${pct}%`,
+          background: `linear-gradient(90deg, ${level.color}, ${nextLevel ? nextLevel.color + '80' : '#FFD700'})`,
+          transition: 'width 0.5s',
+          backgroundSize: '200% 100%',
+          animation: pct >= 100 ? 'shimmer 2s linear infinite' : 'none'
+        }} />
+        {/* Milestone markers */}
+        {MILESTONES.map(m => (
+          <div key={m.pct} style={{
+            position: 'absolute', top: -3, left: `${m.pct}%`, transform: 'translateX(-50%)',
+            width: 10, height: 10, borderRadius: '50%',
+            background: pct >= m.pct ? m.pct === 100 ? '#FFD700' : '#D4A853' : '#1A1820',
+            border: `2px solid ${pct >= m.pct ? '#09080A' : '#2A2430'}`,
+            transition: 'all 0.3s',
+            zIndex: 1
+          }} />
+        ))}
       </div>
 
+      {/* Week Tabs */}
       <div style={{ background: '#0A090D', borderBottom: '1px solid #1A1820', display: 'flex', overflowX: 'auto', flexShrink: 0 }}>
         {AGENT_WEEKS.map((w, i) => {
           const wd = w.tasks.filter((_, ti) => done[`${i}-${ti}`]).length;
@@ -140,6 +375,7 @@ export default function AgentDashboard({ user, onLogout }) {
         })}
       </div>
 
+      {/* Main Content */}
       <div className="fi" key={wi} style={{ flex: 1, overflowY: 'auto', padding: '22px 16px', maxWidth: 600, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <div style={{ fontSize: 10, letterSpacing: '0.22em', color: ac, textTransform: 'uppercase' }}>{PHASE_LABELS[week.phase]} · {week.days}</div>
@@ -232,8 +468,47 @@ export default function AgentDashboard({ user, onLogout }) {
           )}
         </div>
 
-        {/* 90-Day Goal Tracker — Below Checklist */}
+        {/* Milestones & Badges */}
         <div style={{ marginTop: 28, borderTop: '1px solid #1A1820', paddingTop: 20 }}>
+          <div style={{ fontSize: 11, letterSpacing: '0.2em', color: ac, textTransform: 'uppercase', fontWeight: 700, marginBottom: 14 }}>🏅 Milestones</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            {MILESTONES.map(m => {
+              const unlocked = pct >= m.pct;
+              return (
+                <div key={m.pct} style={{
+                  background: unlocked ? `${m.pct === 100 ? '#FFD700' : '#D4A853'}12` : '#0D0C10',
+                  border: `1.5px solid ${unlocked ? (m.pct === 100 ? '#FFD700' : '#D4A853') + '40' : '#1A1820'}`,
+                  borderRadius: 12, padding: '14px 8px', textAlign: 'center',
+                  opacity: unlocked ? 1 : 0.4, transition: 'all 0.3s'
+                }}>
+                  <div style={{ fontSize: 28, marginBottom: 6, filter: unlocked ? 'none' : 'grayscale(1)' }}>{m.icon}</div>
+                  <div style={{ fontSize: 10, color: unlocked ? '#EEE5D5' : '#3A3040', fontWeight: 700, marginBottom: 2 }}>{m.badge}</div>
+                  <div style={{ fontSize: 9, color: '#3A3040' }}>{m.pct}%</div>
+                </div>
+              );
+            })}
+          </div>
+          {nextLevel && (
+            <div style={{ marginTop: 12, background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 16, filter: 'grayscale(0.5)' }}>{nextLevel.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: '#5A5060' }}>Next: <span style={{ color: nextLevel.color, fontWeight: 700 }}>{nextLevel.title}</span></div>
+                <div style={{ marginTop: 4, height: 4, background: '#1A1820', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 2,
+                    width: `${nextLevel.min > 0 ? ((pct - (LEVELS[LEVELS.indexOf(nextLevel) - 1]?.min || 0)) / (nextLevel.min - (LEVELS[LEVELS.indexOf(nextLevel) - 1]?.min || 0))) * 100 : 0}%`,
+                    background: `linear-gradient(90deg, ${level.color}, ${nextLevel.color})`,
+                    transition: 'width 0.4s'
+                  }} />
+                </div>
+              </div>
+              <span style={{ fontSize: 10, color: '#3A3040' }}>{nextLevel.min - pct}% to go</span>
+            </div>
+          )}
+        </div>
+
+        {/* 90-Day Goal Tracker */}
+        <div style={{ marginTop: 24, borderTop: '1px solid #1A1820', paddingTop: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ fontSize: 11, letterSpacing: '0.2em', color: ac, textTransform: 'uppercase', fontWeight: 700 }}>🎯 90-Day Goals</div>
             {(() => {
@@ -246,7 +521,6 @@ export default function AgentDashboard({ user, onLogout }) {
             })()}
           </div>
 
-          {/* Overall progress bar */}
           {(() => {
             const fields = [
               { key: 'doors', goal: 400 }, { key: 'contacts', goal: 125 },
@@ -272,7 +546,12 @@ export default function AgentDashboard({ user, onLogout }) {
               const goalPct = Math.min((total / f.goal) * 100, 100);
               const goalDone = total >= f.goal;
               return (
-                <div key={f.key} style={{ background: '#0D0C10', border: `1px solid ${goalDone ? '#6BAE9430' : '#1A1820'}`, borderRadius: 12, padding: '14px' }}>
+                <div key={f.key} style={{
+                  background: goalDone ? '#0E14100A' : '#0D0C10',
+                  border: `1px solid ${goalDone ? '#6BAE9430' : '#1A1820'}`,
+                  borderRadius: 12, padding: '14px',
+                  transition: 'all 0.3s'
+                }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 16 }}>{f.icon}</span>
