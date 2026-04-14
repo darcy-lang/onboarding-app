@@ -92,7 +92,6 @@ export default function DCDashboard({ user, onLogout }) {
   const wkDone = week.tasks.filter((_, i) => done[`${wi}-${i}`]).length;
   const wkPct = Math.round((wkDone / week.tasks.length) * 100);
   const allDone = wkDone === week.tasks.length;
-  const wkVideos = week.videos || [];
   const wkTraining = TRAINING_VIDEOS.filter(v => v.week === wi && trainingUrls[v.id]);
   const allWkTraining = TRAINING_VIDEOS.filter(v => v.week === wi);
   const tabs = ['tasks', 'videos'];
@@ -249,7 +248,6 @@ export default function DCDashboard({ user, onLogout }) {
         )}
         {tab === 'videos' && (
           <div>
-            {wkVideos.map(id => <VideoCard key={id} id={id} ac={ac} videoUrls={videoUrls} />)}
             {allWkTraining.map(tv => {
               const loomUrl = trainingUrls[tv.id];
               const hasVideo = !!loomUrl;

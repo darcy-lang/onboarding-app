@@ -73,7 +73,6 @@ export default function AgentDashboard({ user, onLogout }) {
   const wkDone = week.tasks.filter((_, i) => done[`${wi}-${i}`]).length;
   const wkPct = Math.round((wkDone / week.tasks.length) * 100);
   const allDone = wkDone === week.tasks.length;
-  const wkVideos = week.videos || [];
   const wkTraining = TRAINING_VIDEOS.filter(v => v.week === wi && trainingUrls[v.id]);
   const tabs = ['tasks', 'videos', ...(week.script ? ['script'] : [])];
 
@@ -154,7 +153,6 @@ export default function AgentDashboard({ user, onLogout }) {
         )}
         {tab === 'videos' && (
           <div>
-            {wkVideos.map(id => <VideoCard key={id} id={id} ac={ac} videoUrls={videoUrls} />)}
             {wkTraining.length > 0 ? wkTraining.map(tv => {
               const loomUrl = trainingUrls[tv.id];
               const embedMatch = loomUrl.match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
@@ -177,7 +175,7 @@ export default function AgentDashboard({ user, onLogout }) {
                   )}
                 </div>
               );
-            }) : wkVideos.length === 0 && (
+            }) : (
               <div style={{ textAlign: 'center', padding: '30px 0', color: '#3A3040', fontSize: 13 }}>No videos added for this week yet. Check back soon!</div>
             )}
           </div>
