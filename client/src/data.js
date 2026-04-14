@@ -25,12 +25,12 @@ export const TRAINING_VIDEOS = [
   { id: 'tv8', week: 3, title: "Building Your Referral Network", topic: "How to find referral partners, what to say, and how to grow your network" },
   // Week 5 — Buyer Leads
   { id: 'tv9', week: 4, title: "Qualifying Buyers Fast", topic: "The 5 qualification questions and how to score leads hot, warm, or cold" },
-  { id: 'tv10', week: 4, title: "How to Handle Buyer Enquiries", topic: "Responding fast, what to say on the first call, and booking the viewing" },
+  { id: 'tv10', week: 4, title: "Portal Optimization", topic: "Making your listings stand out on Idealista, Fotocasa, and the website" },
   // Week 6 — First Viewings
   { id: 'tv11', week: 5, title: "Running a Perfect Viewing", topic: "Room by room walkthrough, reading buying signals, and the close question" },
   { id: 'tv12', week: 5, title: "Follow-Up That Converts", topic: "WhatsApp templates, timing, persistence, and turning viewings into offers" },
   // Week 7 — Pipeline Management
-  { id: 'tv13', week: 6, title: "How to Follow Up Leads on FUB", topic: "Using Follow Up Boss to track leads, set reminders, and never lose a contact" },
+  { id: 'tv13', week: 6, title: "Pipeline Management", topic: "Hot/warm/cold scoring system and how to run your weekly pipeline review" },
   { id: 'tv14', week: 6, title: "Staying Consistent", topic: "How to keep door knocking and prospecting when viewings and leads pile up" },
   // Week 8 — Urgency & Offers
   { id: 'tv15', week: 7, title: "Creating Buyer Urgency", topic: "When and how to push, scarcity tactics, and moving buyers to a decision" },
