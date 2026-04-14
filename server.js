@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import db from './db.js';
+import { initDb } from './db.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import videoRoutes from './routes/video.routes.js';
@@ -43,7 +43,13 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/dist/index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`\nServer running on http://localhost:${PORT}`);
-  console.log(`Open the app at http://localhost:5173 (dev) or http://localhost:${PORT} (prod)\n`);
+// Initialize database then start server
+initDb().then(() => {
+  app.listen(PORT, () => {
+    console.log(`\nServer running on http://localhost:${PORT}`);
+    console.log(`Open the app at http://localhost:5173 (dev) or http://localhost:${PORT} (prod)\n`);
+  });
+}).catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
 });
