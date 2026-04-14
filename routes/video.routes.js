@@ -87,4 +87,30 @@ router.post('/loom', requireAuth, requireRole('dc', 'admin'), (req, res) => {
   res.json({ ok: true, video_id, url: loom_url });
 });
 
+// GET /api/videos/training — get all training video Loom URLs
+router.get('/training', requireAuth, (req, res) => {
+  const rows = db.prepare('SELECT video_id, loom_url FROM training_videos').all();
+  const videos = {};
+  rows.forEach(r => { videos[r.video_id] = r.loom_url; });
+  res.json({ videos });
+});
+
+// POST /api/videos/training — DC saves a Loom URL for a training video
+router.post('/training', requireAuth, requireRole('dc', 'admin'), (req, res) => {
+  const { video_id, loom_url } = req.body;
+  if (!video_id) return res.status(400).json({ error: 'Invalid video_id' });
+  if (!loom_url) return res.status(400).json({ error: 'No Loom URL provided' });
+  db.prepare(`
+    INSERT OR REPLACE INTO training_videos (video_id, loom_url, added_by)
+    VALUES (?, ?, ?)
+  `).run(video_id, loom_url, req.user.id);
+  res.json({ ok: true, video_id, loom_url });
+});
+
+// DELETE /api/videos/training/:id — DC removes a training video
+router.delete('/training/:id', requireAuth, requireRole('dc', 'admin'), (req, res) => {
+  db.prepare('DELETE FROM training_videos WHERE video_id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 export default router;

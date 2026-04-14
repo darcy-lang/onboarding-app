@@ -78,6 +78,14 @@ db.exec(`
     UNIQUE(dc_user_id, agent_id, week_index, task_index)
   );
 
+  CREATE TABLE IF NOT EXISTS training_videos (
+    video_id TEXT PRIMARY KEY,
+    loom_url TEXT NOT NULL,
+    added_by INTEGER NOT NULL,
+    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (added_by) REFERENCES users(id)
+  );
+
   CREATE TABLE IF NOT EXISTS videos (
     video_id TEXT PRIMARY KEY CHECK(video_id IN ('v1','v2','v3','v4','v5','v6','v7','v8')),
     file_path TEXT NOT NULL,

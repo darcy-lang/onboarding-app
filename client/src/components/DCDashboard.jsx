@@ -4,6 +4,7 @@ import VideoCard from './VideoCard.jsx';
 import VideoUploadPanel from './VideoUploadPanel.jsx';
 import AgentProfileView from './AgentProfileView.jsx';
 import TeamDashboard from './TeamDashboard.jsx';
+import TrainingVideoManager from './TrainingVideoManager.jsx';
 import { DC_WEEKS, PHASE_COLORS, PHASE_LABELS } from '../data.js';
 
 export default function DCDashboard({ user, onLogout }) {
@@ -23,6 +24,7 @@ export default function DCDashboard({ user, onLogout }) {
   const [resetId, setResetId] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [showManageUsers, setShowManageUsers] = useState(false);
+  const [showTrainingVideos, setShowTrainingVideos] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -95,6 +97,7 @@ export default function DCDashboard({ user, onLogout }) {
 
   return (
     <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", background: '#09080A', minHeight: '100vh', color: '#DDD5C8', display: 'flex', flexDirection: 'column' }}>
+      {showTrainingVideos && <TrainingVideoManager onClose={() => setShowTrainingVideos(false)} />}
       {showPrompt && <DCMorningPrompt onClose={() => setShowPrompt(false)} />}
       {viewingAgentId && <AgentProfileView agentId={viewingAgentId} onClose={() => setViewingAgentId(null)} />}
 
@@ -159,6 +162,7 @@ export default function DCDashboard({ user, onLogout }) {
         <div style={{ fontSize: 14, color: '#EEE5D5', fontWeight: 700 }}>👩‍💼 {user.name}</div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ fontSize: 11, color: '#3A3040' }}>{pct}% done</div>
+          <button onClick={() => setShowTrainingVideos(true)} style={{ background: '#E07B6A', color: '#09080A', border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>🎬 Training Videos</button>
           <button onClick={() => setShowManageUsers(true)} style={{ background: '#9B7EC8', color: '#09080A', border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>+ Add Agents</button>
           <button onClick={() => setShowTeamDashboard(true)} style={{ background: '#D4A853', color: '#09080A', border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>📊 Team</button>
           <button onClick={() => setShowPrompt(true)} style={{ background: '#6BAE94', color: '#09080A', border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>🌅 My Focus</button>

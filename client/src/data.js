@@ -9,6 +9,46 @@ export const VIDEOS = {
   v8: { title: "The Weekly Routine", duration: "5–6 min", url: "", brief: "Casual phone camera. Walk through a perfect week: CRM check, door knocking, calls, viewing prep, social post." },
 };
 
+// 24 training videos — 2 per week, organized by week focus
+export const TRAINING_VIDEOS = [
+  // Week 1 — Prospecting Start
+  { id: 'tv1', week: 0, title: "Your First Day Game Plan", topic: "What to do on day 1, who to meet, how to prepare for your first week" },
+  { id: 'tv2', week: 0, title: "Door Knocking 101", topic: "The exact script, body language, what to carry, and how to approach" },
+  // Week 2 — Prospecting Intensity
+  { id: 'tv3', week: 1, title: "CRM Mastery", topic: "How to log contacts, track leads, and stay organized from day one" },
+  { id: 'tv4', week: 1, title: "The Power of 25 Doors a Day", topic: "Why volume wins, how to stay consistent, and beat the numbers game" },
+  // Week 3 — First Appointment
+  { id: 'tv5', week: 2, title: "How to Run a CMA", topic: "Step by step comparative market analysis for your first listing appointment" },
+  { id: 'tv6', week: 2, title: "Handling Seller Objections", topic: "Top 5 objections sellers throw at you and the exact responses that work" },
+  // Week 4 — Getting Signatures
+  { id: 'tv7', week: 3, title: "Asking for the Signature", topic: "The close — when to ask, how to be confident, never leave without asking" },
+  { id: 'tv8', week: 3, title: "Building Your Referral Network", topic: "How to find referral partners, what to say, and how to grow your network" },
+  // Week 5 — Buyer Leads
+  { id: 'tv9', week: 4, title: "Qualifying Buyers Fast", topic: "The 5 qualification questions and how to score leads hot, warm, or cold" },
+  { id: 'tv10', week: 4, title: "Portal Optimization", topic: "Making your listing stand out on Idealista, Fotocasa, and the website" },
+  // Week 6 — First Viewings
+  { id: 'tv11', week: 5, title: "Running a Perfect Viewing", topic: "Room by room walkthrough, reading buying signals, and the close question" },
+  { id: 'tv12', week: 5, title: "Follow-Up That Converts", topic: "WhatsApp templates, timing, persistence, and turning viewings into offers" },
+  // Week 7 — Pipeline Management
+  { id: 'tv13', week: 6, title: "Pipeline Management", topic: "Hot/warm/cold scoring system and how to run your weekly pipeline review" },
+  { id: 'tv14', week: 6, title: "Staying Consistent", topic: "How to keep door knocking and prospecting when viewings and leads pile up" },
+  // Week 8 — Urgency & Offers
+  { id: 'tv15', week: 7, title: "Creating Buyer Urgency", topic: "When and how to push, scarcity tactics, and moving buyers to a decision" },
+  { id: 'tv16', week: 7, title: "The Offer Process", topic: "From verbal interest to written offer — what the DC needs to know" },
+  // Week 9 — Viewing Volume
+  { id: 'tv17', week: 8, title: "Advanced Viewing Techniques", topic: "Handling multiple buyers, group viewings, and managing viewing schedules" },
+  { id: 'tv18', week: 8, title: "Reading Buying Signals", topic: "Body language, questions buyers ask, and knowing when they're ready" },
+  // Week 10 — Negotiation
+  { id: 'tv19', week: 9, title: "Presenting Offers to Sellers", topic: "How to frame an offer, manage seller expectations, and stay in control" },
+  { id: 'tv20', week: 9, title: "Counter-Offer Strategy", topic: "When to push back, when to hold, and how to keep both sides at the table" },
+  // Week 11 — Closing
+  { id: 'tv21', week: 10, title: "Unsticking Stalled Deals", topic: "Finding the real blocker, recovery scripts, and saving deals that stall" },
+  { id: 'tv22', week: 10, title: "The Reservation Process", topic: "Legal steps, deposits, timelines, and what happens after offer accepted" },
+  // Week 12 — Graduation
+  { id: 'tv23', week: 11, title: "Your 6-Month Revenue Plan", topic: "Setting targets, building on momentum, and planning your next 90 days" },
+  { id: 'tv24', week: 11, title: "Lessons From Top Agents", topic: "What the best agents do differently and how to model their habits" },
+];
+
 export const PHASE_COLORS = ["#D4A853", "#6BAE94", "#9B7EC8"];
 export const PHASE_LABELS = ["Phase 1 · Prospecting", "Phase 2 · Listings & Leads", "Phase 3 · Viewings & Close"];
 
