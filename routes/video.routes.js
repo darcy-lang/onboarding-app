@@ -66,4 +66,25 @@ router.post('/upload', requireAuth, requireRole('dc', 'admin'), upload.single('f
   res.json({ ok: true, video_id, url: filePath });
 });
 
+// POST /api/videos/loom — save a Loom URL
+router.post('/loom', requireAuth, requireRole('dc', 'admin'), (req, res) => {
+  const { video_id, loom_url } = req.body;
+  if (!video_id || !VALID_IDS.includes(video_id)) return res.status(400).json({ error: 'Invalid video_id' });
+  if (!loom_url) return res.status(400).json({ error: 'No Loom URL provided' });
+
+  // Delete old uploaded file if exists
+  const existing = db.prepare('SELECT file_path FROM videos WHERE video_id = ?').get(video_id);
+  if (existing && existing.file_path && existing.file_path.startsWith('/uploads/')) {
+    const oldPath = path.join(__dirname, '..', existing.file_path);
+    try { fs.unlinkSync(oldPath); } catch {}
+  }
+
+  db.prepare(`
+    INSERT OR REPLACE INTO videos (video_id, file_path, original_name, uploaded_by)
+    VALUES (?, ?, ?, ?)
+  `).run(video_id, loom_url, 'loom', req.user.id);
+
+  res.json({ ok: true, video_id, url: loom_url });
+});
+
 export default router;
