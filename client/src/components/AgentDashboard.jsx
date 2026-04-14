@@ -539,45 +539,6 @@ export default function AgentDashboard({ user, onLogout }) {
           </div>
         </div>
 
-        {/* Milestones & Badges */}
-        <div style={{ marginTop: 24, borderTop: '1px solid #1A1820', paddingTop: 20 }}>
-          <div style={{ fontSize: 11, letterSpacing: '0.2em', color: ac, textTransform: 'uppercase', fontWeight: 700, marginBottom: 14 }}>🏅 Milestones</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-            {MILESTONES.map(m => {
-              const unlocked = pct >= m.pct;
-              return (
-                <div key={m.pct} style={{
-                  background: unlocked ? `${m.pct === 100 ? '#FFD700' : '#D4A853'}12` : '#0D0C10',
-                  border: `1.5px solid ${unlocked ? (m.pct === 100 ? '#FFD700' : '#D4A853') + '40' : '#1A1820'}`,
-                  borderRadius: 12, padding: '14px 8px', textAlign: 'center',
-                  opacity: unlocked ? 1 : 0.4, transition: 'all 0.3s'
-                }}>
-                  <div style={{ fontSize: 28, marginBottom: 6, filter: unlocked ? 'none' : 'grayscale(1)' }}>{m.icon}</div>
-                  <div style={{ fontSize: 10, color: unlocked ? '#EEE5D5' : '#3A3040', fontWeight: 700, marginBottom: 2 }}>{m.badge}</div>
-                  <div style={{ fontSize: 9, color: '#3A3040' }}>{m.pct}%</div>
-                </div>
-              );
-            })}
-          </div>
-          {nextLevel && (
-            <div style={{ marginTop: 12, background: '#0D0C10', border: '1px solid #1A1820', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 16, filter: 'grayscale(0.5)' }}>{nextLevel.icon}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: '#5A5060' }}>Next: <span style={{ color: nextLevel.color, fontWeight: 700 }}>{nextLevel.title}</span></div>
-                <div style={{ marginTop: 4, height: 4, background: '#1A1820', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', borderRadius: 2,
-                    width: `${nextLevel.min > 0 ? ((pct - (LEVELS[LEVELS.indexOf(nextLevel) - 1]?.min || 0)) / (nextLevel.min - (LEVELS[LEVELS.indexOf(nextLevel) - 1]?.min || 0))) * 100 : 0}%`,
-                    background: `linear-gradient(90deg, ${level.color}, ${nextLevel.color})`,
-                    transition: 'width 0.4s'
-                  }} />
-                </div>
-              </div>
-              <span style={{ fontSize: 10, color: '#3A3040' }}>{nextLevel.min - pct}% to go</span>
-            </div>
-          )}
-        </div>
-
         <div style={{ height: 40 }} />
       </div>
     </div>
